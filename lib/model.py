@@ -2,6 +2,7 @@ from typing import List, Tuple
 from lib.entity import Point, Volume
 
 import numpy as np
+import math
 
 class Box(Volume):
     """Класс для создания параллелепипеда"""
@@ -64,43 +65,79 @@ class Envelope:
     def GetVolumes(self):
         return self.volumes
 
-    def create_c_shaped(self):
-        # Убираем зазор - электрод плотно прилегает к наномостику
-        width = self.grip_width + 2 * self.envelope_thickness  # убираем envelope_gap
-        height = self.grip_height  # убираем envelope_gap
+    def create_c_shaped(self, angle):
+        width = self.grip_width + 2 * self.envelope_thickness
+        height = self.grip_height + self.envelope_thickness
+        angle_min = math.atan2(height, width / 2)
+        angle_max = math.pi - angle_min
+        angle = math.radians(angle)
 
-        # Левая вертикальная часть
-        self.volumes.append(Box(
-            self.bridge_center_x - self.envelope_length/2,
-            self.bridge_center_y - width/2,
-            self.bridge_center_z,
-            self.envelope_length,
-            self.envelope_thickness,
-            height + self.envelope_thickness,
-            self.mesh_size
-        ))
+        if angle < angle_min:
+            z_height = width * math.tan(angle) / 2
 
-        # Верхняя горизонтальная часть
-        self.volumes.append(Box(
-            self.bridge_center_x - self.envelope_length/2,
-            self.bridge_center_y - self.grip_width/2,
-            self.bridge_center_z + height,
-            self.envelope_length,
-            self.grip_width,
-            self.envelope_thickness,
-            self.mesh_size
-        ))
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y - width/2,
+                self.bridge_center_z,
+                self.envelope_length,
+                self.envelope_thickness,
+                z_height,
+                self.mesh_size
+            ))
+        else:
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y - width/2,
+                self.bridge_center_z,
+                self.envelope_length,
+                self.envelope_thickness,
+                height,
+                self.mesh_size
+            ))
+
+        if angle > angle_min and angle < angle_max:
+            length = (math.sqrt((width/2)**2 + height**2) * math.sin(angle - angle_min)) / math.sin(angle)
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y - self.grip_width/2,
+                self.bridge_center_z + height - self.envelope_thickness,
+                self.envelope_length,
+                length,
+                self.envelope_thickness,
+                self.mesh_size
+            ))
+        else:
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y - self.grip_width/2,
+                self.bridge_center_z + height - self.envelope_thickness,
+                self.envelope_length,
+                self.grip_width,
+                self.envelope_thickness,
+                self.mesh_size
+            ))
 
         # Правая вертикальная часть
-        self.volumes.append(Box(
-            self.bridge_center_x - self.envelope_length/2,
-            self.bridge_center_y + width/2 - self.envelope_thickness,
-            self.bridge_center_z,
-            self.envelope_length,
-            self.envelope_thickness,
-            height + self.envelope_thickness,
-            self.mesh_size
-        ))
+        if angle > angle_max and angle < math.pi:
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y + width/2 - self.envelope_thickness,
+                self.bridge_center_z + height,
+                self.envelope_length,
+                self.envelope_thickness,
+                -(height + width * math.tan(angle) / 2),
+                self.mesh_size
+            ))
+        elif angle >= math.pi:
+            self.volumes.append(Box(
+                self.bridge_center_x - self.envelope_length/2,
+                self.bridge_center_y + width/2 - self.envelope_thickness,
+                self.bridge_center_z,
+                self.envelope_length,
+                self.envelope_thickness,
+                height,
+                self.mesh_size
+            ))
 
 
 class NanoBridge:
@@ -159,7 +196,7 @@ class NanoBridge:
             envelope_length=self.grip_length,
             mesh_size=0.4
         )
-        ox1.create_c_shaped()  
+        ox1.create_c_shaped(180)  
         
         ox2 = Envelope(
             bridge_center_x=leftCenter[0], bridge_center_y=leftCenter[1], bridge_center_z=0,
@@ -168,7 +205,7 @@ class NanoBridge:
             envelope_length=self.end_length,
             mesh_size=0.4
         )
-        ox2.create_c_shaped()  
+        ox2.create_c_shaped(180)  
         
         ox3 = Envelope(
             bridge_center_x=rightCenter[0], bridge_center_y=rightCenter[1], bridge_center_z=0,
@@ -177,7 +214,7 @@ class NanoBridge:
             envelope_length=self.end_length,
             mesh_size=0.4
         )
-        ox3.create_c_shaped()
+        ox3.create_c_shaped(180)
 
         # Добавляем все оксидные боксы в один список
         self.oxide_boxes = ox1.GetVolumes() + ox2.GetVolumes() + ox3.GetVolumes()
@@ -285,50 +322,48 @@ class GateElectrode:
     
     def create_gate_electrode(self):
         """Создает затворный электрод в форме буквы C"""
-        # Создаем оболочку для электрода БЕЗ зазора
         gate = Envelope(
             bridge_center_x=self.center.x,
             bridge_center_y=self.center.y, 
             bridge_center_z=0,
             grip_width=self.width,
             grip_height=self.height,
-            envelope_gap=0,  # НУЛЕВОЙ зазор - электрод плотно прилегает
+            envelope_gap=0,
             envelope_thickness=self.thickness,
             envelope_length=self.length,
             mesh_size=self.mesh_size
         )
         
-        gate.create_c_shaped()
+        gate.create_c_shaped(150)
         self.boxes = gate.GetVolumes()
 
         mainPart = gate.GetVolumes()
         
-        # Улучшаем дополнительные части электрода
-        leftHand = Box(
-            mainPart[0].GetOrigin().x, 
-            mainPart[0].GetOrigin().y, 
-            mainPart[0].GetOrigin().z,
-            mainPart[0].GetDimensions()[0], 
-            -self.thickness * 3, 
-            self.thickness * 2,
-            self.mesh_size
-        )
+        # leftHand = Box(
+        #     mainPart[0].GetOrigin().x, 
+        #     mainPart[0].GetOrigin().y, 
+        #     mainPart[0].GetOrigin().z,
+        #     mainPart[0].GetDimensions()[0], 
+        #     -self.thickness * 3, 
+        #     self.thickness * 2,
+        #     self.mesh_size
+        # )
         
-        rightHand = Box(
-            mainPart[2].GetOrigin().x, 
-            mainPart[2].GetOrigin().y, 
-            mainPart[2].GetOrigin().z,
-            mainPart[2].GetDimensions()[0], 
-            self.thickness * 3, 
-            self.thickness * 2,
-            self.mesh_size
-        )
+        # rightHand = Box(
+        #     mainPart[2].GetOrigin().x, 
+        #     mainPart[2].GetOrigin().y, 
+        #     mainPart[2].GetOrigin().z,
+        #     mainPart[2].GetDimensions()[0], 
+        #     self.thickness * 3, 
+        #     self.thickness * 2,
+        #     self.mesh_size
+        # )
         
-        self.boxes.extend([leftHand, rightHand])
+        # self.boxes.extend([leftHand, rightHand])
         
-        print(f"Создано частей электрода: {len(self.boxes)}")
-        for i, box in enumerate(self.boxes):
-            print(f"  Часть {i}: {box.GetBounds()}")
+        # print(f"Создано частей электрода: {len(self.boxes)}")
+        # for i, box in enumerate(self.boxes):
+        #     print(f"  Часть {i}: {box.GetBounds()}")
         
         return self.boxes
 

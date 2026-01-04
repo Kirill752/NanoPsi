@@ -13,6 +13,9 @@ electrode:
   mesh_size: 0.6
   thickness: 2.0
   potential: 10.0
+  gate_type: "full"  # "full", "partial", "none"
+  coverage_angle: 270  # Угол покрытия в градусах (для partial типа)
+  gap_distance: 0.5  # Расстояние до наномостика
 
 substrate:
   thickness: 5.0
