@@ -17,3 +17,5 @@ results/
 *.pkl
 *.pickle
 .*
+*.gif
+results/
