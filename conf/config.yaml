@@ -7,26 +7,28 @@ nanobridge:
   mesh_size: 0.5      # Оптимально для размеров 6-8 нм
   oxide_thickness: 2.0 # ИСПРАВЛЕНО: Реалистичная толщина оксида (было 0.3)
 
-electrode:
-  length: 6.0         # Длина затвора соизмерима с шириной канала
-  mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
-  thickness: 5.0
-  potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
-  coverage_angle: 180 # Tri-gate (П-образный затвор)
-  gap_distance: 0
-  oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
-
-
 electrodes:
   - name: "Left_Plunger"
+    center_x: -8.0
+    potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
     length: 6.0         # Длина затвора соизмерима с шириной канала
     mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
     thickness: 5.0
-    potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
     coverage_angle: 180 # Tri-gate (П-образный затвор)
     gap_distance: 0
-    center_x: -5
     oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
+
+  - name: "X-gate"  # Барьер
+    center_x: 0.0
+    length: 4.0     # Заполняет дырку между P1 и P2
+    potential: 0.0  # Или -0.1. Меньше, чем на P1/P2!
+    length: 6.0         # Длина затвора соизмерима с шириной канала
+    mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
+    thickness: 5.0
+    coverage_angle: 180 # Tri-gate (П-образный затвор)
+    gap_distance: 0
+    oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
+
 
   - name: "Right_Plunger"
     length: 6.0         # Длина затвора соизмерима с шириной канала
@@ -35,7 +37,7 @@ electrodes:
     potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
     coverage_angle: 180 # Tri-gate (П-образный затвор)
     gap_distance: 0
-    center_x: 5
+    center_x: 8.0
     oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
 
 substrate:

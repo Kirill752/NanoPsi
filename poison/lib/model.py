@@ -348,20 +348,28 @@ class GateElectrode:
         
         return self.boxes
 
-class CompleteNanoSystem:    
+class CompleteNanoSystem:
     def __init__(self, config):
         self.config = config
         self.nano_bridge = None
         self.substrate = None
         self.air_environment = None
-        self.gate_electrode = None
+        self.gate_electrodes = []  # Теперь список электродов
+        self.electrode_potentials = {}  # Словарь: имя электрода -> потенциал
         self.all_components = []
     
     def create_complete_system(self):
         nb_config = self.config['nanobridge']
         sub_config = self.config['substrate']
         air_config = self.config['air_environment']
-        el_config = self.config['electrode']
+        
+        # Используем новый массив electrodes вместо старого electrode
+        electrodes_config = self.config.get('electrodes', [])
+        if not electrodes_config:
+            # Fallback на старый формат для обратной совместимости
+            if 'electrode' in self.config:
+                electrodes_config = [self.config['electrode']]
+                print("⚠️ Используется устаревший формат 'electrode'. Рекомендуется перейти на 'electrodes'")
 
         self.nano_bridge = NanoBridge(
             grip_length=nb_config['grip_length'], grip_width=nb_config['grip_width'], grip_height=nb_config['grip_height'],
@@ -378,40 +386,56 @@ class CompleteNanoSystem:
         bounds_array = np.array([all_bounds_so_far[:6], all_bounds_so_far[6:]])
         total_bounds = [
             bounds_array[:, 0].min(), bounds_array[:, 1].max(),
-            bounds_array[:, 2].min(), bounds_array[:, 3].max(), 
+            bounds_array[:, 2].min(), bounds_array[:, 3].max(),
             bounds_array[:, 4].min(), bounds_array[:, 5].max()
         ]
         
-        self.air_environment = AirEnvironment(padding=air_config['padding'], height_above=air_config['height_above'], 
+        self.air_environment = AirEnvironment(padding=air_config['padding'], height_above=air_config['height_above'],
                                               height_below=air_config['height_below'], mesh_size=air_config['mesh_size'])
         air_box = self.air_environment.create_air_environment(total_bounds)
         
         (_, center_box, _) = self.nano_bridge.get_boxes()
         center_point = center_box.GetCenter()
         
-        gap = el_config.get('gap_distance', 0)
         oxide_thickness = nb_config.get('oxide_thickness', 0)
         
-        electrode_width = nb_config['grip_width'] + 2 * (oxide_thickness + gap)
-        
-        electrode_height = nb_config['grip_height'] + oxide_thickness + gap
-        
-        electrode_center_z = (nb_config['grip_height'] + oxide_thickness + gap) / 2
-        electrode_center = Point(center_point.x, center_point.y, electrode_center_z)
+        # Создаем все электроды из массива
+        all_gate_boxes = []
+        for el_config in electrodes_config:
+            gap = el_config.get('gap_distance', 0)
+            electrode_width = nb_config['grip_width'] + 2 * (oxide_thickness + gap)
+            electrode_height = nb_config['grip_height'] + oxide_thickness + gap
+            electrode_center_z = (nb_config['grip_height'] + oxide_thickness + gap) / 2
+            
+            # Используем center_x из конфига, если указан, иначе центр наномостика
+            center_x = el_config.get('center_x', center_point.x)
+            electrode_center = Point(center_x, center_point.y, electrode_center_z)
 
-        self.gate_electrode = GateElectrode(
-            center_point=electrode_center, width=electrode_width, height=electrode_height,
-            length=el_config['length'], thickness=el_config['thickness'], mesh_size=el_config['mesh_size'],
-            coverage_angle=el_config['coverage_angle'], gap_distance=gap
-        )
-        gate_boxes = self.gate_electrode.create_gate_electrode()
+            gate_electrode = GateElectrode(
+                center_point=electrode_center, width=electrode_width, height=electrode_height,
+                length=el_config['length'], thickness=el_config['thickness'], mesh_size=el_config['mesh_size'],
+                coverage_angle=el_config['coverage_angle'], gap_distance=gap
+            )
+            gate_boxes = gate_electrode.create_gate_electrode()
+            all_gate_boxes.extend(gate_boxes)
+            
+            self.gate_electrodes.append(gate_electrode)
+            
+            # Сохраняем потенциал для каждого электрода
+            electrode_name = el_config.get('name', f'electrode_{len(self.gate_electrodes)}')
+            self.electrode_potentials[electrode_name] = {
+                'potential': el_config.get('potential', 0.0),
+                'boxes': gate_boxes
+            }
+            
+            print(f"✓ Создан электрод '{electrode_name}' в x={center_x:.1f} нм, потенциал={el_config.get('potential', 0.0):.2f} В")
         
         self.all_components = {
             'nano_bridge': self.nano_bridge.get_boxes(),
             'oxide': self.nano_bridge.get_oxide_boxes(),
             'substrate': [substrate_box],
             'air': [air_box],
-            'gate': gate_boxes
+            'gate': all_gate_boxes
         }
         
         return self.all_components

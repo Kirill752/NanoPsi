@@ -105,8 +105,12 @@ class ElectricFieldSolver:
         
         return self.dielectric_constants['air']
     
-    def create_boundary_mask(self, gate_potential=10.0):
-        """Создает маску граничных условий"""
+    def create_boundary_mask(self):
+        """Создает маску граничных условий с поддержкой нескольких электродов
+        
+        Потенциалы электродов берутся из nano_system.electrode_potentials,
+        которые загружаются из конфига.
+        """
         X, Y, Z = self.grid
         self.mask = np.zeros(X.shape, dtype=bool)
         boundary_values = np.zeros(X.shape)
@@ -117,7 +121,7 @@ class ElectricFieldSolver:
         
         # Границы воздуха - земля (0V)
         boundary_points = 0
-        gate_points = 0
+        electrode_points = {}  # Счетчик точек для каждого электрода
         
         for i in range(X.shape[0]):
             for j in range(X.shape[1]):
@@ -126,11 +130,11 @@ class ElectricFieldSolver:
                     
                     # Границы воздуха
                     on_boundary = (
-                        abs(x - air_bounds[0]) < tolerance or 
+                        abs(x - air_bounds[0]) < tolerance or
                         abs(x - air_bounds[1]) < tolerance or
-                        abs(y - air_bounds[2]) < tolerance or 
+                        abs(y - air_bounds[2]) < tolerance or
                         abs(y - air_bounds[3]) < tolerance or
-                        abs(z - air_bounds[4]) < tolerance or 
+                        abs(z - air_bounds[4]) < tolerance or
                         abs(z - air_bounds[5]) < tolerance
                     )
                     
@@ -138,15 +142,21 @@ class ElectricFieldSolver:
                         self.mask[i,j,k] = True
                         boundary_values[i,j,k] = 0.0
                         boundary_points += 1
-                    
-                    # Электрод - заданный потенциал
-                    elif self.is_point_in_material((x,y,z), 'gate'):
-                        self.mask[i,j,k] = True
-                        boundary_values[i,j,k] = gate_potential
-                        gate_points += 1
+                    else:
+                        # Проверяем все электроды
+                        point_set = False
+                        for electrode_name, electrode_data in self.nano_system.electrode_potentials.items():
+                            if self.is_point_in_boxes((x,y,z), electrode_data['boxes']):
+                                self.mask[i,j,k] = True
+                                boundary_values[i,j,k] = electrode_data['potential']
+                                electrode_points[electrode_name] = electrode_points.get(electrode_name, 0) + 1
+                                point_set = True
+                                break  # Точка может принадлежать только одному электроду
         
-        print(f"Точек на электроде: {gate_points:,}")
         print(f"Точек на границах воздуха: {boundary_points:,}")
+        for name, count in electrode_points.items():
+            print(f"Точек на электроде '{name}': {count:,}")
+        
         return boundary_values
     
     def is_point_in_material(self, point, material_type):
@@ -165,6 +175,19 @@ class ElectricFieldSolver:
                     return True
         return False
     
+    def is_point_in_boxes(self, point, boxes):
+        """Проверяет, находится ли точка внутри любого из указанных боксов"""
+        x, y, z = point
+        for box in boxes:
+            bounds = box.GetBounds()
+            x_min, x_max = min(bounds[0], bounds[1]), max(bounds[0], bounds[1])
+            y_min, y_max = min(bounds[2], bounds[3]), max(bounds[2], bounds[3])
+            z_min, z_max = min(bounds[4], bounds[5]), max(bounds[4], bounds[5])
+            
+            if (x_min <= x <= x_max and y_min <= y <= y_max and z_min <= z <= z_max):
+                return True
+        return False
+    
     def precompute_dielectric_map(self):
         """Предвычисляет карту диэлектрических проницаемостей для всей сетки"""
         X, Y, Z = self.grid
@@ -180,14 +203,24 @@ class ElectricFieldSolver:
         
         return eps_map
     
-    def solve_laplace_sor(self, gate_potential=10.0, omega=1.8, max_iter=1000, tolerance=5e-1, out="electric_field_results.pkl"):
-        """Решает уравнение Лапласа методом SOR"""
+    def solve_laplace_sor(self, omega=1.8, max_iter=1000, tolerance=5e-1, out="electric_field_results.pkl"):
+        """Решает уравнение Лапласа методом SOR
+        
+        Параметры:
+            omega: параметр релаксации SOR (по умолчанию 1.8)
+            max_iter: максимальное число итераций (по умолчанию 1000)
+            tolerance: критерий сходимости (по умолчанию 5e-1)
+            out: имя файла для сохранения результатов
+            
+        Примечание: Потенциалы электродов берутся из конфигурации,
+        а не передаются как параметр.
+        """
         print("Создание вычислительной сетки...")
         self.create_computational_grid()
         X, Y, Z = self.grid
         
         print(f"Размер сетки: {X.shape}")
-        boundary_values = self.create_boundary_mask(gate_potential)
+        boundary_values = self.create_boundary_mask()
         self.potential = boundary_values.copy()
         
         # Предвычисляем карту диэлектрических проницаемостей
