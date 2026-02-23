@@ -1,68 +1,89 @@
 nanobridge:
-  grip_length: 20.0
-  grip_width: 8.0
-  grip_height: 6.0
-  end_length: 8.0
-  end_width: 12.0
-  mesh_size: 0.2
+  grip_length: 40.0   # Немного увеличил длину, чтобы края были дальше от центра
+  grip_width: 6.0     # Увеличил с 2.0 до 6.0 нм (реалистичный размер FinFET)
+  grip_height: 8.0    # Чуть выше, чтобы сохранить пропорции плавника
+  end_length: 10.0
+  end_width: 20.0     # Резервуары пошире
+  mesh_size: 0.5      # Оптимально для размеров 6-8 нм
+  oxide_thickness: 2.0 # ИСПРАВЛЕНО: Реалистичная толщина оксида (было 0.3)
 
 electrode:
-  width: 10.0
-  height: 7.0
-  length: 8.0 
-  mesh_size: 0.6
-  thickness: 2.0
-  potential: 10.0
-  gate_type: "full"  # "full", "partial", "none"
-  coverage_angle: 270  # Угол покрытия в градусах (для partial типа)
-  gap_distance: 0.5  # Расстояние до наномостика
+  length: 6.0         # Длина затвора соизмерима с шириной канала
+  mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
+  thickness: 5.0
+  potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
+  coverage_angle: 180 # Tri-gate (П-образный затвор)
+  gap_distance: 0
+  oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
+
+
+electrodes:
+  - name: "Left_Plunger"
+    length: 6.0         # Длина затвора соизмерима с шириной канала
+    mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
+    thickness: 5.0
+    potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
+    coverage_angle: 180 # Tri-gate (П-образный затвор)
+    gap_distance: 0
+    center_x: -5
+    oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
+
+  - name: "Right_Plunger"
+    length: 6.0         # Длина затвора соизмерима с шириной канала
+    mesh_size: 0.5      # Сетка должна быть такой же или тоньше оксида
+    thickness: 5.0
+    potential: 0.3      # ИСПРАВЛЕНО: +0.3В создаст яму для электрона (вместо пробоя -10В)
+    coverage_angle: 180 # Tri-gate (П-образный затвор)
+    gap_distance: 0
+    center_x: 5
+    oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
 
 substrate:
-  thickness: 5.0
-  padding: 10.0
-  mesh_size: 1.0
+  thickness: 10.0
+  padding: 50.0
+  mesh_size: 2.0      # В подложке сетку можно грубее
 
 air_environment:
-  padding: 15.0
+  padding: 50.0
   height_above: 20.0
-  height_below: 10.0
-  mesh_size: 1.5
+  height_below: 5.0
+  mesh_size: 3.0      # В воздухе сетка самая грубая
 
 solver:
-  grid_resolution: 50
-  max_iterations: 1000
-  tolerance: 0.5
-  relaxation_parameter: 1.8
+  grid_resolution: 150 # Увеличено разрешение сетки для большей точности (было 100)
+  max_iterations: 10000 # Больше итераций для сходимости (было 5000)
+  tolerance: 1.0e-7    # Более строгая точность (было 1e-6)
+  relaxation_parameter: 1.7 # Оптимальный параметр релаксации для SOR (было 1.5)
 
 visualization:
-  slice_tolerance: 0.5
-  point_size: 8
-  opacity: 0.8
+  slice_tolerance: 0.1
+  point_size: 5
+  opacity: 0.6
   color_maps:
-    potential: "jet"
-    electric_field: "hot"
-    electrode: "rainbow"
+    potential: "viridis" # Виридис лучше показывает перепады
+    electric_field: "inferno"
+    electrode: "gray"
   plot_style:
-    figure_size: [15, 10]
-    font_size: 12
-    dpi: 300
+    figure_size: [12, 8]
+    font_size: 14
+    dpi: 150
 
 analysis:
-  potential_tolerance_percent: 10
-  gradient_estimation_radius: 2.0
-  symmetry_threshold: 1.0
+  potential_tolerance_percent: 1.0 # Ужесточим анализ
+  gradient_estimation_radius: 1.0
+  symmetry_threshold: 0.1
 
 materials:
   dielectric_constants:
     air: 1.0
-    oxide: 3.9
-    nanobridge: 11.7
-    substrate: 11.7
-    gate: 10000000000.0
+    oxide: 3.9        # SiO2
+    nanobridge: 11.7  # Si
+    substrate: 11.7   # Si
+    gate: 1.0e+10     # Металл (идеальный проводник)
 
-file_paths:
+file_path:
   output_directory: "results"
-  potential_data_file: "data/nanobridge_potential.dat"
-  spectra_file: "data/spectra_nanobridge.dat"
-  results_file: "data/electric_field_results.pkl"
-  visualization_output: "nanobridge_analysis.png"
+  potential_data_file: "nanobridge_potential.dat"
+  spectra_file: "spectra_nanobridge.dat"
+  results_file: "electric_field_results.pkl"
+  visualization_output: "nanobridge_check.png"

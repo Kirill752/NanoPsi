@@ -1,12 +1,10 @@
 from typing import List, Tuple
-from lib.entity import Point, Volume
+from poison.lib.entity import Point, Volume
 
 import numpy as np
 import math
 
-class Box(Volume):
-    """Класс для создания параллелепипеда"""
-    
+class Box(Volume):    
     def __init__(self, x: float, y: float, z: float, dx: float, dy: float, dz: float, mesh_size: float = None):
         self.x = x
         self.y = y
@@ -33,9 +31,7 @@ class Box(Volume):
     def __repr__(self):
         return f"Box(x={self.x}, y={self.y}, z={self.z}, dx={self.dx}, dy={self.dy}, dz={self.dz})"
 
-class Envelope:
-    """Класс для создания огибающего электрода вокруг узкой части наномостика"""
-    
+class Envelope:    
     def __init__(self, bridge_center_x: float, bridge_center_y: float, bridge_center_z: float,
                  grip_width: float, grip_height: float, envelope_gap: float, 
                  envelope_thickness: float, envelope_length: float,
@@ -117,7 +113,6 @@ class Envelope:
                 self.mesh_size
             ))
 
-        # Правая вертикальная часть
         if angle > angle_max and angle < math.pi:
             self.volumes.append(Box(
                 self.bridge_center_x - self.envelope_length/2,
@@ -140,9 +135,7 @@ class Envelope:
             ))
 
 
-class NanoBridge:
-    """Класс для создания наномостика в форме собачей кости"""
-    
+class NanoBridge:    
     def __init__(self, grip_length=10, grip_width=5, grip_height=5,
                  end_length=5, end_width=10, mesh_size=0.2):
         self.grip_length = grip_length
@@ -156,7 +149,6 @@ class NanoBridge:
         self.oxide_boxes = []
     
     def create_nano_bridge_geometry(self):
-        """Создает геометрию наномостика из трех Box"""
         gl, gw, gh, el, ew, ms = self.grip_length, self.grip_width, self.grip_height, self.end_length, self.end_width, self.mesh_size
 
         left_box = Box(
@@ -180,14 +172,12 @@ class NanoBridge:
         self.boxes = [left_box, center_box, right_box]
         return self.boxes
 
-    def create_oxide(self):
+    def create_oxide(self, oxide_thickness=0.3):
         (left, center, right) = self.get_boxes()
         leftCenter = left.GetCenter().GetCoords()
         centerCenter = center.GetCenter().GetCoords()
         rightCenter = right.GetCenter().GetCoords()
         
-        # Увеличим толщину оксида для лучшей визуализации
-        oxide_thickness = 1.0  # было 0.3
         
         ox1 = Envelope(
             bridge_center_x=centerCenter[0], bridge_center_y=centerCenter[1], bridge_center_z=0,
@@ -241,9 +231,7 @@ class NanoBridge:
             bounds_array[:, 5].max()   # z_max
         ]
 
-class Substrate:
-    """Класс для создания подложки"""
-    
+class Substrate:    
     def __init__(self, thickness=5, padding=10, mesh_size=1.0):
         self.thickness = thickness
         self.padding = padding
@@ -251,7 +239,6 @@ class Substrate:
         self.box = None
     
     def create_substrate(self, nano_bounds):
-        """Создает подложку на основе границ наномостика"""
         x_min, x_max, y_min, y_max, z_min, z_max = nano_bounds
         
         # Подложка располагается под наномостиком
@@ -274,9 +261,7 @@ class Substrate:
         
         return self.box
 
-class AirEnvironment:
-    """Класс для создания окружающей среды (воздуха)"""
-    
+class AirEnvironment:    
     def __init__(self, padding=15, height_above=20, height_below=10, mesh_size=1.5):
         self.padding = padding
         self.height_above = height_above
@@ -285,7 +270,6 @@ class AirEnvironment:
         self.box = None
     
     def create_air_environment(self, nano_bounds):
-        """Создает окружающую среду на основе границ наномостика"""
         x_min, x_max, y_min, y_max, z_min, z_max = nano_bounds
         
         # Окружающая среда охватывает все элементы
@@ -308,9 +292,7 @@ class AirEnvironment:
         
         return self.box
 
-class GateElectrode:
-    """Класс для создания затворного электрода"""
-    
+class GateElectrode:    
     def __init__(self, center_point: Point, width=15, height=8, length=5, thickness=2, mesh_size=0.6, coverage_angle=180, gap_distance=0):
         self.center = center_point
         self.width = width
@@ -323,14 +305,13 @@ class GateElectrode:
         self.gap_distance = gap_distance
     
     def create_gate_electrode(self):
-        """Создает затворный электрод в форме буквы C"""
         gate = Envelope(
             bridge_center_x=self.center.x,
             bridge_center_y=self.center.y, 
-            bridge_center_z=0,
+            bridge_center_z=self.center.z - self.height / 2,
             grip_width=self.width,
             grip_height=self.height,
-            envelope_gap=0,
+            envelope_gap=self.gap_distance,
             envelope_thickness=self.thickness,
             envelope_length=self.length,
             mesh_size=self.mesh_size
@@ -367,9 +348,7 @@ class GateElectrode:
         
         return self.boxes
 
-class CompleteNanoSystem:
-    """Класс для создания полной системы: наномостик + подложка + воздух + электрод"""
-    
+class CompleteNanoSystem:    
     def __init__(self, config):
         self.config = config
         self.nano_bridge = None
@@ -379,8 +358,6 @@ class CompleteNanoSystem:
         self.all_components = []
     
     def create_complete_system(self):
-        """Создает полную систему"""
-
         nb_config = self.config['nanobridge']
         sub_config = self.config['substrate']
         air_config = self.config['air_environment']
@@ -391,7 +368,7 @@ class CompleteNanoSystem:
             end_length=nb_config['end_length'], end_width=nb_config['end_width'], mesh_size=nb_config['mesh_size']
         )
         self.nano_bridge.create_nano_bridge_geometry()
-        self.nano_bridge.create_oxide()
+        self.nano_bridge.create_oxide(nb_config["oxide_thickness"])
         
         nano_bounds = self.nano_bridge.get_total_bounds()
         self.substrate = Substrate(thickness=sub_config['thickness'], padding=sub_config['padding'], mesh_size=sub_config['mesh_size'])
@@ -412,10 +389,20 @@ class CompleteNanoSystem:
         (_, center_box, _) = self.nano_bridge.get_boxes()
         center_point = center_box.GetCenter()
         
+        gap = el_config.get('gap_distance', 0)
+        oxide_thickness = nb_config.get('oxide_thickness', 0)
+        
+        electrode_width = nb_config['grip_width'] + 2 * (oxide_thickness + gap)
+        
+        electrode_height = nb_config['grip_height'] + oxide_thickness + gap
+        
+        electrode_center_z = (nb_config['grip_height'] + oxide_thickness + gap) / 2
+        electrode_center = Point(center_point.x, center_point.y, electrode_center_z)
+
         self.gate_electrode = GateElectrode(
-            center_point=center_point, width=el_config['width'], height=el_config['height'], 
+            center_point=electrode_center, width=electrode_width, height=electrode_height,
             length=el_config['length'], thickness=el_config['thickness'], mesh_size=el_config['mesh_size'],
-            coverage_angle=el_config['coverage_angle'], gap_distance=el_config['gap_distance']
+            coverage_angle=el_config['coverage_angle'], gap_distance=gap
         )
         gate_boxes = self.gate_electrode.create_gate_electrode()
         

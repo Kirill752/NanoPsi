@@ -1,12 +1,9 @@
-class PsiDataExporter:
-    """Класс для экспорта данных в формате, совместимом с psireader и plots"""
-    
+class PsiDataExporter:    
     def __init__(self, field_solver, nano_system):
         self.field_solver = field_solver
         self.nano_system = nano_system
     
     def export_to_psi_format(self, filename="nanobridge_potential.dat"):
-        """Экспортирует данные потенциала в формате, читаемом psireader"""
         if self.field_solver.potential is None:
             print("Сначала необходимо рассчитать потенциал!")
             return False
@@ -18,7 +15,6 @@ class PsiDataExporter:
         print(f"Размер сетки: {X.shape}")
         
         with open(filename, 'w') as f:
-            # Записываем данные в формате: x y z U
             for i in range(X.shape[0]):
                 for j in range(X.shape[1]):
                     for k in range(X.shape[2]):
@@ -30,10 +26,8 @@ class PsiDataExporter:
         return True
     
     def create_spectra_file(self, filename="spectra_nanobridge.dat", energy_levels=10):
-        """Создает файл спектров (заглушка для совместимости)"""
         with open(filename, 'w') as f:
-            # Создаем фиктивные уровни энергии для совместимости
             for i in range(energy_levels):
-                energy = -0.1 + i * 0.02  # Фиктивные значения
+                energy = -0.1 + i * 0.02
                 f.write(f"{energy:.6f}\n")
         print(f"Файл спектров создан: {filename}")

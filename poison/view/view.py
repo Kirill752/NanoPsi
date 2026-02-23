@@ -1,31 +1,25 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import pyvista as pv
 import os
 
-class NanobridgePotentialVisualizer:
-    """Специализированный визуализатор потенциала внутри наномостика под электродом"""
-    
+class NanobridgePotentialVisualizer:    
     def __init__(self, config, nano_system):
-
         self.config = config
         self.nano_system = nano_system
 
-        file_paths = self.config['file_paths']
-        self.pkl_file = file_paths['results_file']
+        file_path = self.config['file_path']
+        self.pkl_file = file_path['results_file']
 
         self.data = None
         self.grid = None
         self.potential = None
-        self.nanobridge_mask = None
-        self.electrode_mask = None
+        self.electric_field = None
 
-        output_dir = file_paths.get('output_directory', 'results')
+        output_dir = file_path.get('output_directory', 'results')
         os.makedirs(output_dir, exist_ok=True)
     
     def load_data(self):
-        """Загружает данные из pkl файла"""
         if not os.path.exists(self.pkl_file):
             print(f"Файл {self.pkl_file} не найден!")
             return False
@@ -36,10 +30,18 @@ class NanobridgePotentialVisualizer:
             
             self.potential = self.data['potential']
             self.grid = self.data['grid']
+            self.electric_field = self.data.get('electric_field', None)
             
             print(f"Данные успешно загружены из {self.pkl_file}")
             print(f"Размер сетки: {self.potential.shape}")
             print(f"Диапазон потенциалов: {self.potential.min():.3f} - {self.potential.max():.3f} V")
+            
+            if self.electric_field is not None:
+                Ex, Ey, Ez = self.electric_field
+                print(f"Электрическое поле загружено:")
+                print(f"  Ex: [{Ex.min():.3e}, {Ex.max():.3e}] V/нм")
+                print(f"  Ey: [{Ey.min():.3e}, {Ey.max():.3e}] V/нм")
+                print(f"  Ez: [{Ez.min():.3e}, {Ez.max():.3e}] V/нм")
             
             return True
             
@@ -47,374 +49,694 @@ class NanobridgePotentialVisualizer:
             print(f"Ошибка при загрузке файла: {e}")
             return False
     
-    def create_nanobridge_mask(self):
-        """Создает маску для области наномостика под электродом используя параметры из конфига"""
-        if self.grid is None:
+    def plot_potential_profiles(self, save_plot=True):
+        """Строит профили потенциала вдоль осей X, Y, Z через центр наномостика"""
+        if self.grid is None or self.potential is None:
             print("Сначала загрузите данные!")
-            return False
-            
-        X, Y, Z = self.grid
-        
-        # Получаем параметры из конфигурации
-        nb_config = self.config['nanobridge']
-        electrode_config = self.config['electrode']
-        
-        (_, center_box, _) = self.nano_system.nano_bridge.get_boxes()
-        bridge_center = center_box.GetCenter()
-        
-        bridge_length = nb_config['grip_length']
-        bridge_width = nb_config['grip_width']
-        bridge_height = nb_config['grip_height']
-        
-        # Создаем маску для наномостика под электродом
-        self.nanobridge_mask = np.zeros(X.shape, dtype=bool)
-        
-        for i in range(X.shape[0]):
-            for j in range(X.shape[1]):
-                for k in range(X.shape[2]):
-                    x, y, z = X[i,j,k], Y[i,j,k], Z[i,j,k]
-                    
-                    # Проверяем, находится ли точка внутри наномостика
-                    in_bridge_x = abs(x - bridge_center.x) <= bridge_length/2
-                    in_bridge_y = abs(y - bridge_center.y) <= bridge_width/2  
-                    in_bridge_z = (z >= bridge_center.z) and (z <= bridge_height)
-
-                    
-                    if in_bridge_x and in_bridge_y and in_bridge_z:
-                        self.nanobridge_mask[i,j,k] = True
-        
-        print(f"Найдено точек в наномостике под электродом: {np.sum(self.nanobridge_mask):,}")
-        return True
-    
-    def extract_nanobridge_potential(self):
-        """Извлекает потенциал только внутри наномостика под электродом"""
-        if self.nanobridge_mask is None:
-            self.create_nanobridge_mask()
-            
-        X, Y, Z = self.grid
-        self.nanobridge_points = []
-        self.nanobridge_potentials = []
-        
-        for i in range(X.shape[0]):
-            for j in range(X.shape[1]):
-                for k in range(X.shape[2]):
-                    if self.nanobridge_mask[i,j,k]:
-                        self.nanobridge_points.append([X[i,j,k], Y[i,j,k], Z[i,j,k]])
-                        self.nanobridge_potentials.append(self.potential[i,j,k])
-        
-        self.nanobridge_points = np.array(self.nanobridge_points)
-        self.nanobridge_potentials = np.array(self.nanobridge_potentials)
-        
-        print(f"Извлечено точек: {len(self.nanobridge_points)}")
-        if len(self.nanobridge_potentials) > 0:
-            print(f"Диапазон потенциалов в наномостике: {self.nanobridge_potentials.min():.3f} - {self.nanobridge_potentials.max():.3f} V")
-        
-        return len(self.nanobridge_points) > 0
-    
-    def plot_potential_slices(self, save_plot=False):
-        """Строит 2D срезы потенциала через наномостик"""
-        if not self.extract_nanobridge_potential():
             return
             
-        points = self.nanobridge_points
-        potentials = self.nanobridge_potentials
+        X, Y, Z = self.grid
         
-        # Получаем параметры визуализации из конфига
-        viz_config = self.config['visualization']
-        slice_tolerance = viz_config['slice_tolerance']
-        plot_style = viz_config['plot_style']
+        # Находим центральные индексы
+        nx, ny, nz = self.potential.shape
+        i_center = nx // 2
+        j_center = ny // 2
+        k_center = nz // 2
         
-        fig, axes = plt.subplots(2, 3, figsize=plot_style['figure_size'])
-        fig.suptitle('Распределение потенциала в наномостике под электродом', 
-                    fontsize=plot_style['font_size'] + 2)
+        # Координаты центра
+        x_center = X[i_center, j_center, k_center]
+        y_center = Y[i_center, j_center, k_center]
+        z_center = Z[i_center, j_center, k_center]
         
-        # 1. Срез XY через центр по Z
-        z_center = np.median(points[:, 2])
-        mask_xy = (points[:, 2] >= z_center - slice_tolerance) & (points[:, 2] <= z_center + slice_tolerance)
+        print(f"\nПостроение профилей потенциала через центр сетки:")
+        print(f"Центральные индексы: i={i_center}, j={j_center}, k={k_center}")
+        print(f"Координаты центра: X={x_center:.2f}, Y={y_center:.2f}, Z={z_center:.2f} нм")
         
-        ax = axes[0, 0]
-        sc = ax.scatter(points[mask_xy, 0], points[mask_xy, 1], c=potentials[mask_xy], 
-                       cmap=viz_config['color_maps']['potential'], s=20, alpha=viz_config['opacity'])
-        ax.set_xlabel('X (нм)')
-        ax.set_ylabel('Y (нм)')
-        ax.set_title(f'Срез XY (Z={z_center:.1f} нм)')
-        ax.grid(True, alpha=0.3)
-        plt.colorbar(sc, ax=ax, label='Потенциал (V)')
+        # Получаем параметры наномостика из конфига
+        nb_config = self.config['nanobridge']
+        grip_length = nb_config['grip_length']
+        grip_width = nb_config['grip_width']
+        end_length = nb_config['end_length']
+        end_width = nb_config['end_width']
         
-        # 2. Срез XZ через центр по Y
-        y_center = np.median(points[:, 1])
-        mask_xz = (points[:, 1] >= y_center - slice_tolerance) & (points[:, 1] <= y_center + slice_tolerance)
+        fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+        fig.suptitle(f'Профили потенциала через центр наномостика\n(Y={y_center:.1f} нм, Z={z_center:.1f} нм для X; X={x_center:.1f} нм, Z={z_center:.1f} нм для Y; X={x_center:.1f} нм, Y={y_center:.1f} нм для Z)', 
+                     fontsize=14, fontweight='bold')
         
-        ax = axes[0, 1]
-        sc = ax.scatter(points[mask_xz, 0], points[mask_xz, 2], c=potentials[mask_xz], 
-                       cmap=viz_config['color_maps']['electric_field'], s=20, alpha=viz_config['opacity'])
-        ax.set_xlabel('X (нм)')
-        ax.set_ylabel('Z (нм)')
-        ax.set_title(f'Срез XZ (Y={y_center:.1f} нм)')
-        ax.grid(True, alpha=0.3)
-        plt.colorbar(sc, ax=ax, label='Потенциал (V)')
+        # ========== Профиль вдоль X (фиксированные j=j_center, k=k_center) ==========
+        ax = axes[0]
+        x_coords = X[:, j_center, k_center]
+        x_potentials = self.potential[:, j_center, k_center]
         
-        # 3. Срез YZ через центр по X
-        x_center = np.median(points[:, 0])
-        mask_yz = (points[:, 0] >= x_center - slice_tolerance) & (points[:, 0] <= x_center + slice_tolerance)
+        ax.plot(x_coords, x_potentials, 'b-', linewidth=2.5, marker='o', markersize=4)
+        ax.set_xlabel('X (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль X (Y={y_center:.1f} нм, Z={z_center:.1f} нм)', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
         
-        ax = axes[0, 2]
-        sc = ax.scatter(points[mask_yz, 1], points[mask_yz, 2], c=potentials[mask_yz], 
-                       cmap='coolwarm', s=20, alpha=viz_config['opacity'])
-        ax.set_xlabel('Y (нм)')
-        ax.set_ylabel('Z (нм)')
-        ax.set_title(f'Срез YZ (X={x_center:.1f} нм)')
-        ax.grid(True, alpha=0.3)
-        plt.colorbar(sc, ax=ax, label='Потенциал (V)')
+        # Аннотации частей наномостика вдоль X
+        y_min, y_max = ax.get_ylim()
+        y_text = y_min + (y_max - y_min) * 0.95
         
-        # 4. Профиль потенциала вдоль X (в центре)
-        ax = axes[1, 0]
-        center_mask = (abs(points[:, 1] - y_center) < 1.0) & (abs(points[:, 2] - z_center) < 1.0)
-        if np.any(center_mask):
-            sorted_indices = np.argsort(points[center_mask, 0])
-            ax.plot(points[center_mask, 0][sorted_indices], potentials[center_mask][sorted_indices], 
-                   'b-', linewidth=2, marker='o', markersize=3)
-            ax.set_xlabel('X (нм)')
-            ax.set_ylabel('Потенциал (V)')
-            ax.set_title('Профиль потенциала вдоль оси X\n(через центр наномостика)')
-            ax.grid(True, alpha=0.3)
+        # Левый резервуар
+        left_end = -grip_length/2 - end_length
+        right_end = -grip_length/2
+        ax.axvspan(left_end, right_end, alpha=0.15, color='orange', label='Левый резервуар')
+        ax.text((left_end + right_end)/2, y_text, 'Левый\nрезервуар', 
+                ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='orange', alpha=0.3))
         
-        # 5. Профиль потенциала вдоль Y (в центре)
-        ax = axes[1, 1]
-        center_mask = (abs(points[:, 0] - x_center) < 1.0) & (abs(points[:, 2] - z_center) < 1.0)
-        if np.any(center_mask):
-            sorted_indices = np.argsort(points[center_mask, 1])
-            ax.plot(points[center_mask, 1][sorted_indices], potentials[center_mask][sorted_indices], 
-                   'r-', linewidth=2, marker='s', markersize=3)
-            ax.set_xlabel('Y (нм)')
-            ax.set_ylabel('Потенциал (V)')
-            ax.set_title('Профиль потенциала вдоль оси Y\n(через центр наномостика)')
-            ax.grid(True, alpha=0.3)
+        # Центральная часть (grip)
+        left_grip = -grip_length/2
+        right_grip = grip_length/2
+        ax.axvspan(left_grip, right_grip, alpha=0.15, color='green', label='Наномостик')
+        ax.text(0, y_text, 'Наномостик\n(grip)', 
+                ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='green', alpha=0.3))
         
-        # 6. Гистограмма распределения потенциалов
-        ax = axes[1, 2]
-        ax.hist(potentials, bins=30, alpha=0.7, color='green', edgecolor='black')
-        ax.set_xlabel('Потенциал (V)')
-        ax.set_ylabel('Количество точек')
-        ax.set_title('Распределение потенциалов в наномостике')
-        ax.grid(True, alpha=0.3)
+        # Правый резервуар
+        left_end_r = grip_length/2
+        right_end_r = grip_length/2 + end_length
+        ax.axvspan(left_end_r, right_end_r, alpha=0.15, color='orange', label='Правый резервуар')
+        ax.text((left_end_r + right_end_r)/2, y_text, 'Правый\nрезервуар', 
+                ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='orange', alpha=0.3))
         
-        # Добавляем статистику
-        mean_pot = np.mean(potentials)
-        std_pot = np.std(potentials)
-        ax.axvline(mean_pot, color='red', linestyle='--', linewidth=2, 
-                  label=f'Среднее: {mean_pot:.3f} V')
-        ax.axvline(mean_pot + std_pot, color='orange', linestyle='--', alpha=0.7,
-                  label=f'±σ: {std_pot:.3f} V')
-        ax.axvline(mean_pot - std_pot, color='orange', linestyle='--', alpha=0.7)
-        ax.legend()
+        print(f"Профиль X: {len(x_coords)} точек, потенциал: [{x_potentials.min():.4f}, {x_potentials.max():.4f}] V")
+        
+        # ========== Профиль вдоль Y (фиксированные i=i_center, k=k_center) ==========
+        ax = axes[1]
+        y_coords = Y[i_center, :, k_center]
+        y_potentials = self.potential[i_center, :, k_center]
+        
+        ax.plot(y_coords, y_potentials, 'r-', linewidth=2.5, marker='s', markersize=4)
+        ax.set_xlabel('Y (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль Y (X={x_center:.1f} нм, Z={z_center:.1f} нм)', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
+        
+        # Аннотации вдоль Y (ширина наномостика)
+        y_min_ax, y_max_ax = ax.get_ylim()
+        y_text_y = y_min_ax + (y_max_ax - y_min_ax) * 0.95
+        
+        # Центральная часть наномостика
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.15, color='green')
+        ax.text(0, y_text_y, 'Наномостик', 
+                ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='green', alpha=0.3))
+        
+        # Области вне наномостика
+        y_min_coord = y_coords.min()
+        y_max_coord = y_coords.max()
+        if y_min_coord < -grip_width/2:
+            ax.axvspan(y_min_coord, -grip_width/2, alpha=0.1, color='gray')
+            ax.text((y_min_coord - grip_width/2)/2, y_text_y, 'Оксид/Воздух', 
+                    ha='center', va='top', fontsize=8, bbox=dict(boxstyle='round', facecolor='gray', alpha=0.2))
+        if y_max_coord > grip_width/2:
+            ax.axvspan(grip_width/2, y_max_coord, alpha=0.1, color='gray')
+            ax.text((y_max_coord + grip_width/2)/2, y_text_y, 'Оксид/Воздух', 
+                    ha='center', va='top', fontsize=8, bbox=dict(boxstyle='round', facecolor='gray', alpha=0.2))
+        
+        print(f"Профиль Y: {len(y_coords)} точек, потенциал: [{y_potentials.min():.4f}, {y_potentials.max():.4f}] V")
+        
+        # ========== Профиль вдоль Z (фиксированные i=i_center, j=j_center) ==========
+        ax = axes[2]
+        z_coords = Z[i_center, j_center, :]
+        z_potentials = self.potential[i_center, j_center, :]
+        
+        ax.plot(z_coords, z_potentials, 'g-', linewidth=2.5, marker='^', markersize=4)
+        ax.set_xlabel('Z (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль Z (X={x_center:.1f} нм, Y={y_center:.1f} нм)', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
+        
+        # Аннотации вдоль Z (высота структуры)
+        y_min_z, y_max_z = ax.get_ylim()
+        y_text_z = y_min_z + (y_max_z - y_min_z) * 0.95
+        
+        grip_height = nb_config['grip_height']
+        
+        # Подложка (ниже 0)
+        z_min_coord = z_coords.min()
+        if z_min_coord < 0:
+            ax.axvspan(z_min_coord, 0, alpha=0.15, color='brown')
+            ax.text((z_min_coord + 0)/2, y_text_z, 'Подложка', 
+                    ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='brown', alpha=0.3))
+        
+        # Наномостик (0 до grip_height)
+        ax.axvspan(0, grip_height, alpha=0.15, color='green')
+        ax.text(grip_height/2, y_text_z, 'Наномостик', 
+                ha='center', va='top', fontsize=9, bbox=dict(boxstyle='round', facecolor='green', alpha=0.3))
+        
+        # Воздух/Электрод (выше grip_height)
+        z_max_coord = z_coords.max()
+        if z_max_coord > grip_height:
+            ax.axvspan(grip_height, z_max_coord, alpha=0.1, color='cyan')
+            ax.text((grip_height + z_max_coord)/2, y_text_z, 'Воздух/\nЭлектрод', 
+                    ha='center', va='top', fontsize=8, bbox=dict(boxstyle='round', facecolor='cyan', alpha=0.3))
+        
+        print(f"Профиль Z: {len(z_coords)} точек, потенциал: [{z_potentials.min():.4f}, {z_potentials.max():.4f}] V")
         
         plt.tight_layout()
         
         if save_plot:
-            output_path = os.path.join(self.config['file_paths']['output_directory'], 
-                                     self.config['file_paths']['visualization_output'])
-            plt.savefig(output_path, dpi=plot_style['dpi'])
-            print(f"График сохранен в {output_path}")
+            output_path = os.path.join(self.config['file_path']['output_directory'],
+                                     'potential_profiles.png')
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"\nГрафик потенциала сохранен в {output_path}")
         
         plt.show()
     
-    def plot_3d_potential_volume(self):
-        """3D визуализация потенциала в объеме наномостика"""
-        if not self.extract_nanobridge_potential():
+    def plot_nanobridge_zoom_profiles(self, save_plot=True):
+        """Строит детальные профили потенциала в области наномостика"""
+        if self.grid is None or self.potential is None:
+            print("Сначала загрузите данные!")
             return
             
-        points = self.nanobridge_points
-        potentials = self.nanobridge_potentials
-        
-        # Получаем параметры визуализации
-        viz_config = self.config['visualization']
-        
-        # Создаем облако точек PyVista
-        point_cloud = pv.PolyData(points)
-        point_cloud["potential"] = potentials
-        
-        # Находим границы наномостика
-        x_min, x_max = points[:, 0].min(), points[:, 0].max()
-        y_min, y_max = points[:, 1].min(), points[:, 1].max()
-        z_min, z_max = points[:, 2].min(), points[:, 2].max()
-        
-        print(f"Границы наномостика:")
-        print(f"  X: {x_min:.2f} - {x_max:.2f} нм")
-        print(f"  Y: {y_min:.2f} - {y_max:.2f} нм")
-        print(f"  Z: {z_min:.2f} - {z_max:.2f} нм")
-        
-        # Создаем plotter с несколькими видами
-        plotter = pv.Plotter(shape=(2, 2))
-        
-        # 1. 3D облако точек
-        plotter.subplot(0, 0)
-        plotter.add_mesh(point_cloud, scalars="potential", 
-                        cmap=viz_config['color_maps']['potential'], 
-                        point_size=viz_config['point_size'], 
-                        opacity=viz_config['opacity'], 
-                        render_points_as_spheres=True,
-                        scalar_bar_args={'title': "Потенциал, V"})
-        plotter.add_axes()
-        plotter.add_title("3D распределение потенциала\nв наномостике")
-        
-        # 2. Срез через центр наномостика
-        plotter.subplot(0, 1)
-        
-        # Создаем структурированную сетку для всего пространства
         X, Y, Z = self.grid
-        grid = pv.StructuredGrid(X, Y, Z)
-        grid["potential"] = self.potential.ravel(order='F')
         
-        # Срез по YZ плоскости через центр
-        center_x = (x_min + x_max) / 2
-        slice_x = grid.slice(normal='x', origin=[center_x, 0, 0])
-        plotter.add_mesh(slice_x, scalars="potential", 
-                        cmap=viz_config['color_maps']['electric_field'], 
-                        opacity=viz_config['opacity'],
-                        scalar_bar_args={'title': "Потенциал, V"})
-        plotter.add_title(f"Срез YZ (X={center_x:.1f} нм)")
+        # Находим центральные индексы
+        nx, ny, nz = self.potential.shape
+        i_center = nx // 2
+        j_center = ny // 2
+        k_center = nz // 2
         
-        # 3. Срез по XZ плоскости через центр
-        plotter.subplot(1, 0)
-        center_y = (y_min + y_max) / 2
-        slice_y = grid.slice(normal='y', origin=[0, center_y, 0])
-        plotter.add_mesh(slice_y, scalars="potential", 
-                        cmap='coolwarm', 
-                        opacity=viz_config['opacity'],
-                        scalar_bar_args={'title': "Потенциал, V"})
-        plotter.add_title(f"Срез XZ (Y={center_y:.1f} нм)")
+        # Координаты центра
+        x_center = X[i_center, j_center, k_center]
+        y_center = Y[i_center, j_center, k_center]
+        z_center = Z[i_center, j_center, k_center]
         
-        # 4. Изоповерхности внутри наномостика
-        plotter.subplot(1, 1)
+        # Получаем параметры наномостика из конфига
+        nb_config = self.config['nanobridge']
+        grip_length = nb_config['grip_length']
+        grip_width = nb_config['grip_width']
+        grip_height = nb_config['grip_height']
+        oxide_thickness = nb_config.get('oxide_thickness', 0.3)
         
-        # Создаем ограничивающий бокс для наномостика
-        nanobridge_bounds = [x_min, x_max, y_min, y_max, z_min, z_max]
-        nanobridge_box = pv.Box(bounds=nanobridge_bounds)
+        print(f"\nПостроение детальных профилей в области наномостика:")
+        print(f"Центр: X={x_center:.2f}, Y={y_center:.2f}, Z={z_center:.2f} нм")
         
-        # Вырезаем область наномостика
-        nanobridge_region = grid.clip_box(nanobridge_box, invert=False)
+        fig, axes = plt.subplots(1, 3, figsize=(20, 6))
+        fig.suptitle('Детальные профили потенциала в области наномостика\n(увеличенный масштаб для анализа границ)', 
+                     fontsize=14, fontweight='bold')
         
-        if nanobridge_region.n_points > 0:
-            # Создаем изоповерхности
-            contours = nanobridge_region.contour(isosurfaces=8)
-            plotter.add_mesh(contours, 
-                           cmap=viz_config['color_maps']['electrode'], 
-                           opacity=viz_config['opacity'],
-                           scalar_bar_args={'title': "Потенциал, V"})
-            plotter.add_mesh(nanobridge_box, color='white', opacity=0.1, 
-                           show_edges=True, line_width=2)
-            plotter.add_title("Изоповерхности потенциала\nв наномостике")
+        # ========== Профиль вдоль X (только центральная часть) ==========
+        ax = axes[0]
+        x_coords = X[:, j_center, k_center]
+        x_potentials = self.potential[:, j_center, k_center]
         
-        plotter.show()
+        # Ограничиваем область вокруг наномостика
+        x_margin = grip_length * 0.3  # 30% запас с каждой стороны
+        x_mask = (x_coords >= -grip_length/2 - x_margin) & (x_coords <= grip_length/2 + x_margin)
+        
+        ax.plot(x_coords[x_mask], x_potentials[x_mask], 'b-', linewidth=2.5, marker='o', markersize=5)
+        ax.set_xlabel('X (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль X (детально)\nY={y_center:.1f} нм, Z={z_center:.1f} нм', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
+        
+        # Аннотации границ
+        y_min, y_max = ax.get_ylim()
+        
+        # Границы наномостика
+        ax.axvline(-grip_length/2, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Граница grip')
+        ax.axvline(grip_length/2, color='red', linestyle='--', linewidth=2, alpha=0.7)
+        ax.axvspan(-grip_length/2, grip_length/2, alpha=0.15, color='green', label='Наномостик (grip)')
+        
+        ax.legend(fontsize=10)
+        
+        # ========== Профиль вдоль Y (через центр наномостика) ==========
+        ax = axes[1]
+        y_coords = Y[i_center, :, k_center]
+        y_potentials = self.potential[i_center, :, k_center]
+        
+        # Ограничиваем область вокруг наномостика
+        y_margin = (grip_width + 2*oxide_thickness) * 1.5  # Включаем оксид + запас
+        y_mask = (y_coords >= -y_margin) & (y_coords <= y_margin)
+        
+        ax.plot(y_coords[y_mask], y_potentials[y_mask], 'r-', linewidth=2.5, marker='s', markersize=5)
+        ax.set_xlabel('Y (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль Y (детально)\nX={x_center:.1f} нм, Z={z_center:.1f} нм', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
+        
+        # Аннотации границ
+        y_min_ax, y_max_ax = ax.get_ylim()
+        
+        # Границы наномостика
+        ax.axvline(-grip_width/2, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Граница Si')
+        ax.axvline(grip_width/2, color='red', linestyle='--', linewidth=2, alpha=0.7)
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.15, color='green', label='Наномостик (Si)')
+        
+        # Границы оксида
+        oxide_inner = grip_width/2
+        oxide_outer = grip_width/2 + oxide_thickness
+        ax.axvline(-oxide_outer, color='orange', linestyle=':', linewidth=2, alpha=0.7, label='Граница оксида')
+        ax.axvline(oxide_outer, color='orange', linestyle=':', linewidth=2, alpha=0.7)
+        ax.axvspan(-oxide_outer, -oxide_inner, alpha=0.1, color='orange', label='Оксид')
+        ax.axvspan(oxide_inner, oxide_outer, alpha=0.1, color='orange')
+        
+        ax.legend(fontsize=9, loc='best')
+        
+        # ========== Профиль вдоль Z (от подложки до электрода) ==========
+        ax = axes[2]
+        z_coords = Z[i_center, j_center, :]
+        z_potentials = self.potential[i_center, j_center, :]
+        
+        # Ограничиваем область от подложки до чуть выше наномостика
+        z_margin_below = 2.0  # нм ниже наномостика
+        z_margin_above = grip_height * 0.5  # выше наномостика
+        z_mask = (z_coords >= -z_margin_below) & (z_coords <= grip_height + z_margin_above)
+        
+        ax.plot(z_coords[z_mask], z_potentials[z_mask], 'g-', linewidth=2.5, marker='^', markersize=5)
+        ax.set_xlabel('Z (нм)', fontsize=14, fontweight='bold')
+        ax.set_ylabel('Потенциал (V)', fontsize=14, fontweight='bold')
+        ax.set_title(f'Профиль вдоль Z (детально)\nX={x_center:.1f} нм, Y={y_center:.1f} нм', 
+                    fontsize=13, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.tick_params(labelsize=11)
+        
+        # Аннотации границ
+        y_min_z, y_max_z = ax.get_ylim()
+        
+        # Граница подложка-наномостик
+        ax.axvline(0, color='brown', linestyle='--', linewidth=2, alpha=0.7, label='Граница подложка-Si')
+        ax.axvspan(z_coords[z_mask].min(), 0, alpha=0.15, color='brown', label='Подложка')
+        
+        # Граница наномостик-воздух/оксид
+        ax.axvline(grip_height, color='red', linestyle='--', linewidth=2, alpha=0.7, label='Граница Si-оксид')
+        ax.axvspan(0, grip_height, alpha=0.15, color='green', label='Наномостик (Si)')
+        
+        # Область оксида/воздуха
+        if grip_height + oxide_thickness < z_coords[z_mask].max():
+            ax.axvline(grip_height + oxide_thickness, color='orange', linestyle=':', linewidth=2, alpha=0.7, label='Граница оксид-воздух')
+            ax.axvspan(grip_height, grip_height + oxide_thickness, alpha=0.1, color='orange', label='Оксид')
+        
+        ax.legend(fontsize=9, loc='best')
+        
+        plt.tight_layout()
+        
+        if save_plot:
+            output_path = os.path.join(self.config['file_path']['output_directory'], 
+                                     'potential_profiles_zoom.png')
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"\nДетальный график потенциала сохранен в {output_path}")
+        
+        plt.show()
     
-    def analyze_potential_well(self):
-        """Детальный анализ потенциальной ямы в наномостике"""
-        if not self.extract_nanobridge_potential():
+    def plot_nanobridge_zoom_field_profiles(self, save_plot=True):
+        """Строит детальные профили электрического поля в области наномостика"""
+        if self.electric_field is None:
+            print("Электрическое поле не загружено!")
             return
             
-        points = self.nanobridge_points
-        potentials = self.nanobridge_potentials
+        Ex, Ey, Ez = self.electric_field
+        X, Y, Z = self.grid
         
-        # Получаем параметры анализа из конфига
-        analysis_config = self.config['analysis']
-        electrode_config = self.config['electrode']
+        # Находим центральные индексы
+        nx, ny, nz = Ex.shape
+        i_center = nx // 2
+        j_center = ny // 2
+        k_center = nz // 2
         
-        print("\n" + "="*60)
-        print("ДЕТАЛЬНЫЙ АНАЛИЗ ПОТЕНЦИАЛЬНОЙ ЯМЫ В НАНОМОСТИКЕ")
-        print("="*60)
+        # Координаты центра
+        x_center = X[i_center, j_center, k_center]
+        y_center = Y[i_center, j_center, k_center]
+        z_center = Z[i_center, j_center, k_center]
         
-        # Находим минимальный потенциал (дно ямы)
-        min_potential_idx = np.argmin(potentials)
-        min_potential = potentials[min_potential_idx]
-        min_location = points[min_potential_idx]
+        # Получаем параметры наномостика из конфига
+        nb_config = self.config['nanobridge']
+        grip_length = nb_config['grip_length']
+        grip_width = nb_config['grip_width']
+        grip_height = nb_config['grip_height']
         
-        print(f"Минимальный потенциал (дно ямы): {min_potential:.6f} V")
-        print(f"Местоположение минимума: X={min_location[0]:.2f}, Y={min_location[1]:.2f}, Z={min_location[2]:.2f} нм")
+        print(f"\nПостроение детальных профилей электрического поля в области наномостика:")
         
-        # Глубина потенциальной ямы относительно электрода
-        electrode_potential = electrode_config['potential']
-        well_depth = electrode_potential - min_potential
-        print(f"Глубина потенциальной ямы: {well_depth:.6f} V")
+        fig, axes = plt.subplots(3, 3, figsize=(20, 16))
+        fig.suptitle('Детальные профили электрического поля в области наномостика\n(увеличенный масштаб для анализа границ)', 
+                     fontsize=14, fontweight='bold')
         
-        # Размеры потенциальной ямы
-        tolerance_percent = analysis_config['potential_tolerance_percent']
-        tolerance = tolerance_percent / 100.0 * (potentials.max() - min_potential)
-        well_points = points[potentials <= min_potential + tolerance]
+        # ========== Профили вдоль X (центральная часть) ==========
+        x_coords = X[:, j_center, k_center]
+        x_margin = grip_length * 0.3
+        x_mask = (x_coords >= -grip_length/2 - x_margin) & (x_coords <= grip_length/2 + x_margin)
         
-        if len(well_points) > 0:
-            well_size_x = well_points[:, 0].max() - well_points[:, 0].min()
-            well_size_y = well_points[:, 1].max() - well_points[:, 1].min() 
-            well_size_z = well_points[:, 2].max() - well_points[:, 2].min()
-            
-            print(f"\nРазмеры потенциальной ямы (по точкам в пределах {tolerance_percent}% от минимума):")
-            print(f"  По X: {well_size_x:.2f} нм")
-            print(f"  По Y: {well_size_y:.2f} нм")
-            print(f"  По Z: {well_size_z:.2f} нм")
-            print(f"  Объем: {well_size_x * well_size_y * well_size_z:.2f} нм³")
+        # Ex вдоль X
+        ax = axes[0, 0]
+        ex_profile = Ex[:, j_center, k_center]
+        ax.plot(x_coords[x_mask], ex_profile[x_mask], 'b-', linewidth=2.5, marker='o', markersize=4)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль X (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_length/2, grip_length/2, alpha=0.1, color='green')
         
-        # Градиент потенциала в центре ямы
-        center_x, center_y, center_z = min_location
-        gradient_radius = analysis_config['gradient_estimation_radius']
+        # Ey вдоль X
+        ax = axes[1, 0]
+        ey_profile = Ey[:, j_center, k_center]
+        ax.plot(x_coords[x_mask], ey_profile[x_mask], 'r-', linewidth=2.5, marker='s', markersize=4)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль X (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_length/2, grip_length/2, alpha=0.1, color='green')
         
-        # Находим точки вблизи центра для оценки градиента
-        near_center_mask = (
-            (abs(points[:, 0] - center_x) < gradient_radius) &
-            (abs(points[:, 1] - center_y) < gradient_radius) & 
-            (abs(points[:, 2] - center_z) < gradient_radius)
-        )
+        # Ez вдоль X
+        ax = axes[2, 0]
+        ez_profile = Ez[:, j_center, k_center]
+        ax.plot(x_coords[x_mask], ez_profile[x_mask], 'g-', linewidth=2.5, marker='^', markersize=4)
+        ax.set_xlabel('X (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль X (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_length/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_length/2, grip_length/2, alpha=0.1, color='green')
         
-        if np.sum(near_center_mask) > 10:
-            near_points = points[near_center_mask]
-            near_potentials = potentials[near_center_mask]
-            
-            # Оцениваем градиент по разностям
-            grad_x = np.gradient(near_potentials, near_points[:, 0])
-            grad_y = np.gradient(near_potentials, near_points[:, 1])
-            grad_z = np.gradient(near_potentials, near_points[:, 2])
-            
-            avg_grad_x = np.mean(np.abs(grad_x))
-            avg_grad_y = np.mean(np.abs(grad_y)) 
-            avg_grad_z = np.mean(np.abs(grad_z))
-            
-            print(f"\nСредний градиент потенциала вблизи дна ямы:")
-            print(f"  По X: {avg_grad_x:.6f} V/нм")
-            print(f"  По Y: {avg_grad_y:.6f} V/нм")
-            print(f"  По Z: {avg_grad_z:.6f} V/нм")
+        # ========== Профили вдоль Y (область наномостика + оксид) ==========
+        y_coords = Y[i_center, :, k_center]
+        y_margin = (grip_width + 4) * 1.5
+        y_mask = (y_coords >= -y_margin) & (y_coords <= y_margin)
         
-        # Симметрия потенциальной ямы
-        x_center = np.mean(points[:, 0])
-        left_mask = points[:, 0] < x_center
-        right_mask = points[:, 0] > x_center
+        # Ex вдоль Y
+        ax = axes[0, 1]
+        ex_profile_y = Ex[i_center, :, k_center]
+        ax.plot(y_coords[y_mask], ex_profile_y[y_mask], 'b-', linewidth=2.5, marker='o', markersize=4)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль Y (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.1, color='green')
         
-        if np.any(left_mask) and np.any(right_mask):
-            left_avg = np.mean(potentials[left_mask])
-            right_avg = np.mean(potentials[right_mask])
-            symmetry_x = 1 - abs(left_avg - right_avg) / ((left_avg + right_avg) / 2)
-            
-            print(f"\nСимметрия потенциальной ямы:")
-            print(f"  Средний потенциал слева: {left_avg:.6f} V")
-            print(f"  Средний потенциал справа: {right_avg:.6f} V")
-            print(f"  Коэффициент симметрии по X: {symmetry_x:.4f}")
+        # Ey вдоль Y
+        ax = axes[1, 1]
+        ey_profile_y = Ey[i_center, :, k_center]
+        ax.plot(y_coords[y_mask], ey_profile_y[y_mask], 'r-', linewidth=2.5, marker='s', markersize=4)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль Y (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.1, color='green')
         
-        return min_potential, well_depth
+        # Ez вдоль Y
+        ax = axes[2, 1]
+        ez_profile_y = Ez[i_center, :, k_center]
+        ax.plot(y_coords[y_mask], ez_profile_y[y_mask], 'g-', linewidth=2.5, marker='^', markersize=4)
+        ax.set_xlabel('Y (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль Y (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(-grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_width/2, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.1, color='green')
+        
+        # ========== Профили вдоль Z (от подложки до электрода) ==========
+        z_coords = Z[i_center, j_center, :]
+        z_margin_below = 2.0
+        z_margin_above = grip_height * 0.5
+        z_mask = (z_coords >= -z_margin_below) & (z_coords <= grip_height + z_margin_above)
+        
+        # Ex вдоль Z
+        ax = axes[0, 2]
+        ex_profile_z = Ex[i_center, j_center, :]
+        ax.plot(z_coords[z_mask], ex_profile_z[z_mask], 'b-', linewidth=2.5, marker='o', markersize=4)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль Z (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(0, color='brown', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_height, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(0, grip_height, alpha=0.1, color='green')
+        
+        # Ey вдоль Z
+        ax = axes[1, 2]
+        ey_profile_z = Ey[i_center, j_center, :]
+        ax.plot(z_coords[z_mask], ey_profile_z[z_mask], 'r-', linewidth=2.5, marker='s', markersize=4)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль Z (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(0, color='brown', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_height, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(0, grip_height, alpha=0.1, color='green')
+        
+        # Ez вдоль Z
+        ax = axes[2, 2]
+        ez_profile_z = Ez[i_center, j_center, :]
+        ax.plot(z_coords[z_mask], ez_profile_z[z_mask], 'g-', linewidth=2.5, marker='^', markersize=4)
+        ax.set_xlabel('Z (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль Z (детально)', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        ax.axvline(0, color='brown', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvline(grip_height, color='red', linestyle='--', linewidth=1.5, alpha=0.5)
+        ax.axvspan(0, grip_height, alpha=0.1, color='green')
+        
+        plt.tight_layout()
+        
+        if save_plot:
+            output_path = os.path.join(self.config['file_path']['output_directory'], 
+                                     'electric_field_profiles_zoom.png')
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"\nДетальный график электрического поля сохранен в {output_path}")
+        
+        plt.show()
     
-    def quick_visualization(self, save_plots=True):
-        """Быстрая комплексная визуализация"""
+    def plot_electric_field_profiles(self, save_plot=True):
+        """Строит профили компонент электрического поля вдоль осей X, Y, Z"""
+        if self.electric_field is None:
+            print("Электрическое поле не загружено!")
+            return
+            
+        Ex, Ey, Ez = self.electric_field
+        X, Y, Z = self.grid
+        
+        # Находим центральные индексы
+        nx, ny, nz = Ex.shape
+        i_center = nx // 2
+        j_center = ny // 2
+        k_center = nz // 2
+        
+        # Координаты центра
+        x_center = X[i_center, j_center, k_center]
+        y_center = Y[i_center, j_center, k_center]
+        z_center = Z[i_center, j_center, k_center]
+        
+        print(f"\nПостроение профилей электрического поля через центр сетки:")
+        print(f"Координаты центра: X={x_center:.2f}, Y={y_center:.2f}, Z={z_center:.2f} нм")
+        
+        # Получаем параметры наномостика из конфига
+        nb_config = self.config['nanobridge']
+        grip_length = nb_config['grip_length']
+        grip_width = nb_config['grip_width']
+        grip_height = nb_config['grip_height']
+        
+        fig, axes = plt.subplots(3, 3, figsize=(20, 16))
+        fig.suptitle(f'Профили электрического поля через центр наномостика\n(Y={y_center:.1f} нм, Z={z_center:.1f} нм для X; X={x_center:.1f} нм, Z={z_center:.1f} нм для Y; X={x_center:.1f} нм, Y={y_center:.1f} нм для Z)', 
+                     fontsize=14, fontweight='bold')
+        
+        # ========== Профили вдоль X ==========
+        x_coords = X[:, j_center, k_center]
+        
+        # Ex вдоль X
+        ax = axes[0, 0]
+        ex_profile = Ex[:, j_center, k_center]
+        ax.plot(x_coords, ex_profile, 'b-', linewidth=2.5, marker='o', markersize=3)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль X', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_x_annotations(ax, grip_length)
+        
+        # Ey вдоль X
+        ax = axes[1, 0]
+        ey_profile = Ey[:, j_center, k_center]
+        ax.plot(x_coords, ey_profile, 'r-', linewidth=2.5, marker='s', markersize=3)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль X', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_x_annotations(ax, grip_length)
+        
+        # Ez вдоль X
+        ax = axes[2, 0]
+        ez_profile = Ez[:, j_center, k_center]
+        ax.plot(x_coords, ez_profile, 'g-', linewidth=2.5, marker='^', markersize=3)
+        ax.set_xlabel('X (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль X', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_x_annotations(ax, grip_length)
+        
+        # ========== Профили вдоль Y ==========
+        y_coords = Y[i_center, :, k_center]
+        
+        # Ex вдоль Y
+        ax = axes[0, 1]
+        ex_profile_y = Ex[i_center, :, k_center]
+        ax.plot(y_coords, ex_profile_y, 'b-', linewidth=2.5, marker='o', markersize=3)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль Y', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_y_annotations(ax, grip_width)
+        
+        # Ey вдоль Y
+        ax = axes[1, 1]
+        ey_profile_y = Ey[i_center, :, k_center]
+        ax.plot(y_coords, ey_profile_y, 'r-', linewidth=2.5, marker='s', markersize=3)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль Y', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_y_annotations(ax, grip_width)
+        
+        # Ez вдоль Y
+        ax = axes[2, 1]
+        ez_profile_y = Ez[i_center, :, k_center]
+        ax.plot(y_coords, ez_profile_y, 'g-', linewidth=2.5, marker='^', markersize=3)
+        ax.set_xlabel('Y (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль Y', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_y_annotations(ax, grip_width)
+        
+        # ========== Профили вдоль Z ==========
+        z_coords = Z[i_center, j_center, :]
+        
+        # Ex вдоль Z
+        ax = axes[0, 2]
+        ex_profile_z = Ex[i_center, j_center, :]
+        ax.plot(z_coords, ex_profile_z, 'b-', linewidth=2.5, marker='o', markersize=3)
+        ax.set_ylabel('Ex (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ex вдоль Z', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_z_annotations(ax, grip_height)
+        
+        # Ey вдоль Z
+        ax = axes[1, 2]
+        ey_profile_z = Ey[i_center, j_center, :]
+        ax.plot(z_coords, ey_profile_z, 'r-', linewidth=2.5, marker='s', markersize=3)
+        ax.set_ylabel('Ey (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ey вдоль Z', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_z_annotations(ax, grip_height)
+        # Проверка на малые значения
+        if np.abs(ey_profile_z).max() < 1e-10:
+            ax.text(0.5, 0.5, f'Ey ≈ 0\n(max: {np.abs(ey_profile_z).max():.2e})',
+                   ha='center', va='center', transform=ax.transAxes, fontsize=10,
+                   bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.3))
+        
+        # Ez вдоль Z
+        ax = axes[2, 2]
+        ez_profile_z = Ez[i_center, j_center, :]
+        ax.plot(z_coords, ez_profile_z, 'g-', linewidth=2.5, marker='^', markersize=3)
+        ax.set_xlabel('Z (нм)', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Ez (V/нм)', fontsize=12, fontweight='bold')
+        ax.set_title('Ez вдоль Z', fontsize=12, fontweight='bold')
+        ax.grid(True, alpha=0.3, linestyle='--')
+        ax.axhline(0, color='k', linestyle='--', alpha=0.3)
+        self._add_z_annotations(ax, grip_height)
+        # Проверка на малые значения
+        if np.abs(ez_profile_z).max() < 1e-10:
+            ax.text(0.5, 0.5, f'Ez ≈ 0\n(max: {np.abs(ez_profile_z).max():.2e})',
+                   ha='center', va='center', transform=ax.transAxes, fontsize=10,
+                   bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.3))
+        
+        # Выводим статистику
+        print(f"\nСтатистика электрического поля:")
+        print(f"  Ex вдоль X: [{ex_profile.min():.3e}, {ex_profile.max():.3e}] V/нм")
+        print(f"  Ey вдоль Y: [{ey_profile_y.min():.3e}, {ey_profile_y.max():.3e}] V/нм")
+        print(f"  Ez вдоль Z: [{ez_profile_z.min():.3e}, {ez_profile_z.max():.3e}] V/нм")
+        print(f"  Ey вдоль Z: [{ey_profile_z.min():.3e}, {ey_profile_z.max():.3e}] V/нм (может быть ≈0)")
+        
+        plt.tight_layout()
+        
+        if save_plot:
+            output_path = os.path.join(self.config['file_path']['output_directory'], 
+                                     'electric_field_profiles.png')
+            plt.savefig(output_path, dpi=150, bbox_inches='tight')
+            print(f"\nГрафик электрического поля сохранен в {output_path}")
+        
+        plt.show()
+    
+    def _add_x_annotations(self, ax, grip_length):
+        """Добавляет аннотации для профилей вдоль X"""
+        y_min, y_max = ax.get_ylim()
+        # Наномостик в центре
+        ax.axvspan(-grip_length/2, grip_length/2, alpha=0.1, color='green')
+    
+    def _add_y_annotations(self, ax, grip_width):
+        """Добавляет аннотации для профилей вдоль Y"""
+        y_min, y_max = ax.get_ylim()
+        # Наномостик в центре
+        ax.axvspan(-grip_width/2, grip_width/2, alpha=0.1, color='green')
+    
+    def _add_z_annotations(self, ax, grip_height):
+        """Добавляет аннотации для профилей вдоль Z"""
+        y_min, y_max = ax.get_ylim()
+        # Наномостик от 0 до grip_height
+        ax.axvspan(0, grip_height, alpha=0.1, color='green')
+    
+    def quick_visualization(self, save_plots=True, include_zoom=True):
+        """Быстрая визуализация - профили потенциала и электрического поля"""
         if not self.load_data():
             return
+        
+        print("\n" + "="*60)
+        print("ВИЗУАЛИЗАЦИЯ ПОТЕНЦИАЛА (полный масштаб)")
+        print("="*60)
+        self.plot_potential_profiles(save_plot=save_plots)
+        
+        if include_zoom:
+            print("\n" + "="*60)
+            print("ДЕТАЛЬНАЯ ВИЗУАЛИЗАЦИЯ ПОТЕНЦИАЛА (область наномостика)")
+            print("="*60)
+            self.plot_nanobridge_zoom_profiles(save_plot=save_plots)
+        
+        if self.electric_field is not None:
+            print("\n" + "="*60)
+            print("ВИЗУАЛИЗАЦИЯ ЭЛЕКТРИЧЕСКОГО ПОЛЯ (полный масштаб)")
+            print("="*60)
+            self.plot_electric_field_profiles(save_plot=save_plots)
             
-        print("\n1. Анализ потенциальной ямы:")
-        min_pot, depth = self.analyze_potential_well()
-        
-        print("\n2. Построение 2D срезов:")
-        self.plot_potential_slices(save_plot=save_plots)
-        
-        print("\n3. 3D визуализация:")
-        self.plot_3d_potential_volume()
-        
-        return min_pot, depth
+            if include_zoom:
+                print("\n" + "="*60)
+                print("ДЕТАЛЬНАЯ ВИЗУАЛИЗАЦИЯ ЭЛЕКТРИЧЕСКОГО ПОЛЯ (область наномостика)")
+                print("="*60)
+                self.plot_nanobridge_zoom_field_profiles(save_plot=save_plots)
+        else:
+            print("\nВНИМАНИЕ: Электрическое поле не найдено в данных!")
 
-def visualize_nanobridge_potential(config, nano_system, save_plots=True):
+def visualize_nanobridge_potential(config, nano_system, save_plots=True, include_zoom=True):
+    """Главная функция для визуализации потенциала в наномостике
+    
+    Args:
+        config: Конфигурация системы
+        nano_system: Модель наносистемы
+        save_plots: Сохранять ли графики (по умолчанию True)
+        include_zoom: Включать ли детальные графики области наномостика (по умолчанию True)
+    """
     visualizer = NanobridgePotentialVisualizer(config, nano_system)
-    return visualizer.quick_visualization(save_plots=save_plots)
+    return visualizer.quick_visualization(save_plots=save_plots, include_zoom=include_zoom)

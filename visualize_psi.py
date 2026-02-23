@@ -3,11 +3,11 @@ import pyvista as pv
 import os
 import glob
 
+from poison.view.field_view import NanoSystemVisualizer
+from poison.lib.model import CompleteNanoSystem
+from conf.config import ConfigManager
+
 def load_psi_data(filename):
-    """
-    Loads wavefunction data from a file.
-    Format: x y z val
-    """
     print(f"Loading wavefunction from {filename}...")
     data = np.loadtxt(filename)
     
@@ -26,10 +26,6 @@ def load_psi_data(filename):
     
     print(f"Grid dimensions: {nx}x{ny}x{nz}")
     
-    # Reshape to 3D grid
-    # Assuming the same order as in arnoldi.py (x, y, z)
-    # But we need to be careful. Let's use the mapping method to be safe.
-    
     grid_val = np.zeros((nx, ny, nz))
     
     x_map = {v: i for i, v in enumerate(unique_x)}
@@ -45,50 +41,68 @@ def load_psi_data(filename):
     return grid_val, unique_x, unique_y, unique_z
 
 def visualize_wavefunction(filename, isosurface_value=0.1):
-    """
-    Visualizes the wavefunction using PyVista.
-    """
     try:
         psi, x, y, z = load_psi_data(filename)
     except FileNotFoundError:
         print(f"File not found: {filename}")
         return
 
-    # Create PyVista grid
     grid = pv.RectilinearGrid(x, y, z)
-    
-    # Add data to grid (flatten in Fortran order because PyVista/VTK uses x-fastest, 
-    # but our array is [x,y,z]. Wait, VTK uses x-fastest? 
-    # Actually, PyVista wraps VTK. 
-    # If we have array[nx, ny, nz], and we pass it to grid.point_data, 
-    # we need to flatten it correctly.
-    # grid.points are ordered: (x0,y0,z0), (x1,y0,z0), ... (fastest x)
-    # So if our array is indexed [xi, yi, zi], we should flatten with order='F' 
-    # IF the loops were for k in z: for j in y: for i in x.
-    # But our load loop was arbitrary.
-    # Let's look at how we filled it: grid_val[xi, yi, zi]
-    # If we flatten with order='F', we get elements (0,0,0), (1,0,0), ... which matches x-fastest.
     
     grid.point_data["probability_density"] = psi.flatten(order='F')
     
-    # Create plotter
     plotter = pv.Plotter()
     
-    # Add isosurfaces
-    # Calculate max value to scale isosurfaces
+    # Add nanostructure visualization
+    try:
+        config = ConfigManager.load_config("conf/config.yaml")
+        nano_system = CompleteNanoSystem(config)
+        nano_system.create_complete_system()
+        
+        visualizer = NanoSystemVisualizer(nano_system)
+        pyvista_objects = visualizer.convert_to_pyvista()
+        
+        added_to_legend = {
+            'nano_bridge': False,
+            'oxide': False,
+            'substrate': False,
+            'air': False,
+            'gate': False
+        }
+        
+        for obj in pyvista_objects:
+            # Рисуем только границы структуры (wireframe), чтобы не перекрывать волновую функцию
+            if obj['type'] == 'air':
+                # Воздух не рисуем вообще
+                continue
+            
+            if obj['type'] in added_to_legend and not added_to_legend[obj['type']]:
+                label = obj['name']
+                added_to_legend[obj['type']] = True
+            else:
+                label = None
+            
+            # Рисуем только рёбра (wireframe) без заполнения
+            plotter.add_mesh(obj['mesh'],
+                           color=obj['color'],
+                           style='wireframe',  # Только границы
+                           line_width=2,
+                           opacity=1.0,
+                           label=label)
+                           
+    except Exception as e:
+        print(f"Warning: Could not load nanostructure visualization: {e}")
+
     max_val = np.max(psi)
     print(f"Max probability density: {max_val:.6e}")
     
-    # Create contours at different levels
     levels = [0.1 * max_val, 0.5 * max_val, 0.8 * max_val]
     contours = grid.contour(isosurfaces=levels, scalars="probability_density")
     
-    plotter.add_mesh(contours, opacity=0.5, cmap="viridis", show_scalar_bar=True, label="Probability Density")
+    plotter.add_mesh(contours, opacity=0.8, cmap="viridis", show_scalar_bar=True, label="Probability Density")
     
-    # Add outline
     plotter.add_mesh(grid.outline(), color="k")
     
-    # Add axes with labels
     plotter.show_axes()
     plotter.show_grid(
         xtitle="X (nm)",
@@ -102,15 +116,14 @@ def visualize_wavefunction(filename, isosurface_value=0.1):
     )
     
     plotter.add_title(f"Wavefunction: {os.path.basename(filename)}")
+    plotter.add_legend()
     
-    # Save screenshot
     output_image = filename.replace(".dat", ".png")
-    plotter.show(screenshot=output_image, auto_close=False) # auto_close=False to keep window open if interactive
+    plotter.show(screenshot=output_image, auto_close=False)
     print(f"Saved visualization to {output_image}")
     plotter.close()
 
 def main():
-    # Find all psi files in results directory
     psi_files = glob.glob("results/psi_*.dat")
     psi_files.sort()
     
@@ -120,7 +133,6 @@ def main():
         
     print(f"Found {len(psi_files)} wavefunction files.")
     
-    # Visualize all found wavefunctions
     for psi_file in psi_files:
         print(f"Visualizing: {psi_file}")
         visualize_wavefunction(psi_file)

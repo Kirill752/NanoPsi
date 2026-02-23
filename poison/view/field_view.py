@@ -1,17 +1,14 @@
-from lib.model import CompleteNanoSystem
+from poison.lib.model import CompleteNanoSystem
 import numpy as np
 import matplotlib.pyplot as plt
 import pyvista as pv
 
-class NanoSystemVisualizer:
-    """Класс для визуализации полной системы"""
-    
+class NanoSystemVisualizer:    
     def __init__(self, nano_system: CompleteNanoSystem):
         self.nano_system = nano_system
         self.pyvista_objects = []
     
     def convert_to_pyvista(self):
-        """Конвертирует все компоненты системы в PyVista объекты"""
         self.pyvista_objects = []
         
         components = self.nano_system.all_components
@@ -31,13 +28,11 @@ class NanoSystemVisualizer:
             'gate': ['Gate'] * len(components['gate'])
         }
         
-        # Конвертируем каждый компонент
         component_idx = 0
         for comp_type, boxes in components.items():
             for i, box in enumerate(boxes):
                 x, y, z, dx, dy, dz = box.GetCoords()
                 
-                # Корректируем границы для отрицательных размеров
                 x_min = min(x, x + dx)
                 x_max = max(x, x + dx)
                 y_min = min(y, y + dy)
@@ -75,7 +70,6 @@ class NanoSystemVisualizer:
         
         plotter = pv.Plotter()
         
-        # Словарь для отслеживания, какие типы уже добавлены в легенду
         added_to_legend = {
             'nano_bridge': False,
             'oxide': False, 
@@ -88,12 +82,11 @@ class NanoSystemVisualizer:
             opacity = 0.3 if obj['type'] == 'air' else 0.8 if obj['type'] == 'oxide' else 1.0
             show_edges = obj['type'] != 'air'
             
-            # Добавляем в легенду только если этот тип еще не был добавлен
             if obj['type'] in added_to_legend and not added_to_legend[obj['type']]:
                 label = obj['name']
                 added_to_legend[obj['type']] = True
             else:
-                label = None  # Не показывать в легенде
+                label = None
             
             plotter.add_mesh(obj['mesh'], 
                            color=obj['color'], 

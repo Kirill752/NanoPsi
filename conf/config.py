@@ -2,12 +2,9 @@ import os
 import json
 import yaml
 
-class ConfigManager:
-    """Менеджер конфигурации для загрузки параметров из файлов"""
-    
+class ConfigManager:    
     @staticmethod
     def load_config(config_file):
-        """Загружает конфигурацию из JSON или YAML файла"""
         if not os.path.exists(config_file):
             raise FileNotFoundError(f"Конфигурационный файл {config_file} не найден!")
         

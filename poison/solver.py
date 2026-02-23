@@ -1,7 +1,63 @@
-from lib.model import CompleteNanoSystem
+from poison.lib.model import CompleteNanoSystem
 import numpy as np
 import time
 import pickle
+from numba import jit
+
+@jit(nopython=True)
+def _sor_iteration_numba(potential, mask, eps_map, omega, tolerance, max_iter):
+    """Оптимизированный SOR решатель с использованием Numba JIT компиляции"""
+    nx, ny, nz = potential.shape
+    
+    for iteration in range(max_iter):
+        max_change = 0.0
+        
+        for i in range(1, nx-1):
+            for j in range(1, ny-1):
+                for k in range(1, nz-1):
+                    if mask[i,j,k]:
+                        continue
+                    
+                    # Получаем диэлектрические проницаемости из предвычисленной карты
+                    eps_center = eps_map[i,j,k]
+                    eps_x_prev = eps_map[i-1,j,k]
+                    eps_x_next = eps_map[i+1,j,k]
+                    eps_y_prev = eps_map[i,j-1,k]
+                    eps_y_next = eps_map[i,j+1,k]
+                    eps_z_prev = eps_map[i,j,k-1]
+                    eps_z_next = eps_map[i,j,k+1]
+                    
+                    # Усредненные значения
+                    eps_x_avg_prev = (eps_center + eps_x_prev) * 0.5
+                    eps_x_avg_next = (eps_center + eps_x_next) * 0.5
+                    eps_y_avg_prev = (eps_center + eps_y_prev) * 0.5
+                    eps_y_avg_next = (eps_center + eps_y_next) * 0.5
+                    eps_z_avg_prev = (eps_center + eps_z_prev) * 0.5
+                    eps_z_avg_next = (eps_center + eps_z_next) * 0.5
+                    
+                    numerator = (eps_x_avg_prev * potential[i-1,j,k] +
+                               eps_x_avg_next * potential[i+1,j,k] +
+                               eps_y_avg_prev * potential[i,j-1,k] +
+                               eps_y_avg_next * potential[i,j+1,k] +
+                               eps_z_avg_prev * potential[i,j,k-1] +
+                               eps_z_avg_next * potential[i,j,k+1])
+                    
+                    denominator = (eps_x_avg_prev + eps_x_avg_next +
+                                 eps_y_avg_prev + eps_y_avg_next +
+                                 eps_z_avg_prev + eps_z_avg_next)
+                    
+                    if denominator > 0:
+                        new_value = numerator / denominator
+                        change = omega * (new_value - potential[i,j,k])
+                        potential[i,j,k] += change
+                        if abs(change) > max_change:
+                            max_change = abs(change)
+        
+        if max_change < tolerance:
+            return potential, iteration + 1, max_change
+    
+    return potential, max_iter, max_change
+
 
 class ElectricFieldSolver:
     """Класс для решения уравнения Лапласа и расчета электрического поля"""
@@ -109,6 +165,21 @@ class ElectricFieldSolver:
                     return True
         return False
     
+    def precompute_dielectric_map(self):
+        """Предвычисляет карту диэлектрических проницаемостей для всей сетки"""
+        X, Y, Z = self.grid
+        eps_map = np.ones(X.shape, dtype=np.float64) * self.dielectric_constants['air']
+        
+        print("Предвычисление карты диэлектрических проницаемостей...")
+        for i in range(X.shape[0]):
+            for j in range(X.shape[1]):
+                for k in range(X.shape[2]):
+                    eps_map[i,j,k] = self.get_dielectric_constant_at_point(
+                        (X[i,j,k], Y[i,j,k], Z[i,j,k])
+                    )
+        
+        return eps_map
+    
     def solve_laplace_sor(self, gate_potential=10.0, omega=1.8, max_iter=1000, tolerance=5e-1, out="electric_field_results.pkl"):
         """Решает уравнение Лапласа методом SOR"""
         print("Создание вычислительной сетки...")
@@ -119,57 +190,18 @@ class ElectricFieldSolver:
         boundary_values = self.create_boundary_mask(gate_potential)
         self.potential = boundary_values.copy()
         
+        # Предвычисляем карту диэлектрических проницаемостей
+        eps_map = self.precompute_dielectric_map()
+        
         print("Решение уравнения Лапласа...")
         start_time = time.time()
         
-        for iteration in range(max_iter):
-            max_change = 0.0
-            
-            for i in range(1, X.shape[0]-1):
-                for j in range(1, X.shape[1]-1):
-                    for k in range(1, X.shape[2]-1):
-                        if self.mask[i,j,k]:
-                            continue
-                            
-                        # Получаем диэлектрические проницаемости
-                        eps_center = self.get_dielectric_constant_at_point((X[i,j,k], Y[i,j,k], Z[i,j,k]))
-                        eps_x_prev = self.get_dielectric_constant_at_point((X[i-1,j,k], Y[i-1,j,k], Z[i-1,j,k]))
-                        eps_x_next = self.get_dielectric_constant_at_point((X[i+1,j,k], Y[i+1,j,k], Z[i+1,j,k]))
-                        eps_y_prev = self.get_dielectric_constant_at_point((X[i,j-1,k], Y[i,j-1,k], Z[i,j-1,k]))
-                        eps_y_next = self.get_dielectric_constant_at_point((X[i,j+1,k], Y[i,j+1,k], Z[i,j+1,k]))
-                        eps_z_prev = self.get_dielectric_constant_at_point((X[i,j,k-1], Y[i,j,k-1], Z[i,j,k-1]))
-                        eps_z_next = self.get_dielectric_constant_at_point((X[i,j,k+1], Y[i,j,k+1], Z[i,j,k+1]))
-                        
-                        # Усредненные значения
-                        eps_x_avg_prev = (eps_center + eps_x_prev) / 2
-                        eps_x_avg_next = (eps_center + eps_x_next) / 2
-                        eps_y_avg_prev = (eps_center + eps_y_prev) / 2
-                        eps_y_avg_next = (eps_center + eps_y_next) / 2
-                        eps_z_avg_prev = (eps_center + eps_z_prev) / 2
-                        eps_z_avg_next = (eps_center + eps_z_next) / 2
-                        
-                        numerator = (eps_x_avg_prev * self.potential[i-1,j,k] + 
-                                   eps_x_avg_next * self.potential[i+1,j,k] +
-                                   eps_y_avg_prev * self.potential[i,j-1,k] + 
-                                   eps_y_avg_next * self.potential[i,j+1,k] +
-                                   eps_z_avg_prev * self.potential[i,j,k-1] + 
-                                   eps_z_avg_next * self.potential[i,j,k+1])
-                        
-                        denominator = (eps_x_avg_prev + eps_x_avg_next +
-                                     eps_y_avg_prev + eps_y_avg_next +
-                                     eps_z_avg_prev + eps_z_avg_next)
-                        
-                        if denominator > 0:
-                            new_value = numerator / denominator
-                            change = omega * (new_value - self.potential[i,j,k])
-                            self.potential[i,j,k] += change
-                            max_change = max(max_change, abs(change))
-            
-            if iteration % 50 == 0:
-                print(f"Итерация {iteration}, изменение: {max_change:.2e}")
-            
-            if max_change < tolerance:
-                break
+        # Используем оптимизированную функцию с Numba
+        self.potential, iterations, final_change = _sor_iteration_numba(
+            self.potential, self.mask, eps_map, omega, tolerance, max_iter
+        )
+        
+        print(f"Сходимость достигнута за {iterations} итераций, финальное изменение: {final_change:.2e}")
         
         end_time = time.time()
         print(f"Расчет завершен за {end_time - start_time:.2f} секунд")
@@ -196,7 +228,9 @@ class ElectricFieldSolver:
             'potential': self.potential,
             'electric_field': self.electric_field,
             'grid': self.grid,
-            'grid_resolution': self.grid_resolution
+            'grid_resolution': self.grid_resolution,
+            'mask': self.mask,
+            'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
         }
         
         with open(filename, 'wb') as f:
