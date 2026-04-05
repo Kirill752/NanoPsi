@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1775414923.11019 "/Users/latyshov75/Desktop/diplom/NanoPsi/tex/main.tex" "main.pdf" "main" 1775414926.5611 0
-  "/Users/latyshov75/Desktop/diplom/NanoPsi/tex/main.tex" 1775414869.95436 126958 77468ec28d81bfebfbe97e8514bb6e48 ""
+["pdflatex"] 1775421200.04973 "/Users/latyshov75/Desktop/diplom/NanoPsi/tex/main.tex" "main.pdf" "main" 1775421203.54033 0
+  "/Users/latyshov75/Desktop/diplom/NanoPsi/tex/main.tex" 1775421157.11207 105529 511011f9c4f5c26a76f876fece729cee ""
   "/Users/latyshov75/Library/texlive/2026/texmf-var/fonts/tfm/lh/lh-t2a/labx1440.tfm" 1775321198.06201 3304 6a543c07045572737981351171e0505e ""
   "/Users/latyshov75/Library/texlive/2026/texmf-var/fonts/tfm/lh/lh-t2a/labx2074.tfm" 1775321195.84964 3316 0992aa03d0c75498a0b6fb905d9eaab6 ""
   "/Users/latyshov75/Library/texlive/2026/texmf-var/fonts/tfm/lh/lh-t2a/labx2488.tfm" 1775322007.01992 3304 10c1a71cb294f8a8339c46823bcc15f2 ""
@@ -170,9 +170,9 @@
   "images/shuttle.png" 1775318323.81359 164211 8c366b27ebfd270d8fc47fe5bdbb591a ""
   "images/wf_1qd_E0.png" 1775413552.93926 596453 64653efd27756c6ef61209f10189b8f9 ""
   "images/wf_2qd_E0.png" 1775414125.3528 748528 a0bd2ef0c212b3fac2ac05bfc842c92f ""
-  "main.aux" 1775414926.46601 14857 2cdd303d9dff415f4560ec3ac26d7938 "pdflatex"
-  "main.tex" 1775414869.95436 126958 77468ec28d81bfebfbe97e8514bb6e48 ""
-  "main.toc" 1775414926.46774 3147 cffd532cec504122e9f22a8bf9df857a "pdflatex"
+  "main.aux" 1775421203.44798 19090 de1826a659a2a2c45f874ade212a1c6f "pdflatex"
+  "main.tex" 1775421157.11207 105529 511011f9c4f5c26a76f876fece729cee ""
+  "main.toc" 1775421203.44949 4706 0834a3f8cda94439b1a98cdbad5f4991 "pdflatex"
   (generated)
   "main.aux"
   "main.log"

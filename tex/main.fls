@@ -315,6 +315,14 @@ INPUT ./images/wf_2qd_E0.png
 INPUT ./images/wf_2qd_E0.png
 INPUT ./images/wf_2qd_E0.png
 INPUT ./images/wf_2qd_E0.png
+INPUT ./images/nanobridge_cross_section_1qd.png
+INPUT ./images/nanobridge_cross_section_1qd.png
+INPUT ./images/nanobridge_cross_section_1qd.png
+INPUT ./images/nanobridge_cross_section_1qd.png
+INPUT ./images/nanobridge_cross_section_2qd.png
+INPUT ./images/nanobridge_cross_section_2qd.png
+INPUT ./images/nanobridge_cross_section_2qd.png
+INPUT ./images/nanobridge_cross_section_2qd.png
 INPUT main.aux
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb
 INPUT /usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb
