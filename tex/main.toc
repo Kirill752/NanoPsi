@@ -19,20 +19,14 @@
 \contentsline {subsection}{\numberline {1.1.8}Наведённые квантовые точки в кремниевых наноструктурах}{20}{}%
 \contentsline {subsubsection}{Особенности квантовых точек на основе крмения}{21}{}%
 \contentsline {subsubsection}{Платформы и геометрия затворных систем}{22}{}%
-\contentsline {subsubsection}{Характерные линейные размеры}{22}{}%
-\contentsline {subsubsection}{Энергетический спектр наведённых квантовых точек}{23}{}%
-\contentsline {subsubsection}{Энергия зарядки}{23}{}%
-\contentsline {subsubsection}{Управляющие напряжения}{24}{}%
-\contentsline {subsubsection}{Напряжения плунжерных затворов}{24}{}%
-\contentsline {subsection}{\numberline {1.1.9}Напряжения барьерных затворов}{24}{}%
-\contentsline {chapter}{\numberline {2}Актульность и цели работы}{26}{}%
-\contentsline {chapter}{\numberline {3}Техничекская реализация}{28}{}%
-\contentsline {section}{\numberline {3.1}Создание модели}{28}{}%
-\contentsline {section}{\numberline {3.2}Математическая модель и численный расчет электрического поля}{28}{}%
-\contentsline {subsection}{\numberline {3.2.1}Постановка задачи}{28}{}%
-\contentsline {subsection}{\numberline {3.2.2}Численный метод решения}{30}{}%
-\contentsline {subsection}{\numberline {3.2.3}Программная реализация}{31}{}%
-\contentsline {section}{\numberline {3.3}Квантово-механическая модель и расчет энергетического спектра}{32}{}%
-\contentsline {subsection}{\numberline {3.3.1}Постановка задачи}{32}{}%
+\contentsline {chapter}{\numberline {2}Актульность и цели работы}{24}{}%
+\contentsline {chapter}{\numberline {3}Техничекская реализация}{26}{}%
+\contentsline {section}{\numberline {3.1}Создание модели}{26}{}%
+\contentsline {section}{\numberline {3.2}Математическая модель и численный расчет электрического поля}{26}{}%
+\contentsline {subsection}{\numberline {3.2.1}Постановка задачи}{26}{}%
+\contentsline {subsection}{\numberline {3.2.2}Численный метод решения}{29}{}%
+\contentsline {subsection}{\numberline {3.2.3}Программная реализация}{30}{}%
+\contentsline {section}{\numberline {3.3}Квантово-механическая модель и расчет энергетического спектра}{31}{}%
+\contentsline {subsection}{\numberline {3.3.1}Постановка задачи}{31}{}%
 \contentsline {subsection}{\numberline {3.3.2}Дискретизация гамильтониана}{33}{}%
 \contentsline {subsection}{\numberline {3.3.3}Вычислительные аспекты и программная реализация}{33}{}%

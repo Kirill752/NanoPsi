@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.4)  4 APR 2026 22:03
+This is pdfTeX, Version 3.141592653-2.6-1.40.29 (TeX Live 2026) (preloaded format=pdflatex 2026.4.4)  5 APR 2026 21:48
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -427,6 +427,12 @@ Package caption Info: Standard document class detected.
 \c@caption@flags=\count307
 \c@continuedfloat=\count308
 Package caption Info: wrapfig package is loaded.
+) (/usr/local/texlive/2026/texmf-dist/tex/latex/caption/subcaption.sty
+Package: subcaption 2023/07/28 v1.6b Sub-captions (AR)
+Package caption Info: New subtype `subfigure' on input line 238.
+\c@subfigure=\count309
+Package caption Info: New subtype `subtable' on input line 238.
+\c@subtable=\count310
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/newunicodechar/newunicodechar.sty
 Package: newunicodechar 2018/04/08 v1.2 Defining Unicode characters
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/amsfonts/amssymb.sty
@@ -515,9 +521,9 @@ runsystem(uname -s > "main.w18")...executed.
 runsystem(rm -- "main.w18")...executed.
 
 )
-\c@svg@param@lastpage=\count309
+\c@svg@param@lastpage=\count311
 \svg@box=\box58
-\c@svg@param@currpage=\count310
+\c@svg@param@currpage=\count312
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/xcolor/xcolor.sty
 Package: xcolor 2024/09/29 v3.02 LaTeX color extensions (UK)
  (/usr/local/texlive/2026/texmf-dist/tex/latex/graphics-cfg/color.cfg
@@ -568,14 +574,14 @@ Package: pgfsys 2025-08-29 v3.1.11a (3.1.11a)
 \pgf@yd=\dimen267
 \w@pgf@writea=\write3
 \r@pgf@reada=\read3
-\c@pgf@counta=\count311
-\c@pgf@countb=\count312
-\c@pgf@countc=\count313
-\c@pgf@countd=\count314
+\c@pgf@counta=\count313
+\c@pgf@countb=\count314
+\c@pgf@countc=\count315
+\c@pgf@countd=\count316
 \t@pgf@toka=\toks34
 \t@pgf@tokb=\toks35
 \t@pgf@tokc=\toks36
-\pgf@sys@id@count=\count315
+\pgf@sys@id@count=\count317
  (/usr/local/texlive/2026/texmf-dist/tex/generic/pgf/systemlayer/pgf.cfg
 File: pgf.cfg 2025-08-29 v3.1.11a (3.1.11a)
 )
@@ -586,8 +592,8 @@ File: pgfsys-pdftex.def 2025-08-29 v3.1.11a (3.1.11a)
 File: pgfsys-common-pdf.def 2025-08-29 v3.1.11a (3.1.11a)
 ))) (/usr/local/texlive/2026/texmf-dist/tex/generic/pgf/systemlayer/pgfsyssoftpath.code.tex
 File: pgfsyssoftpath.code.tex 2025-08-29 v3.1.11a (3.1.11a)
-\pgfsyssoftpath@smallbuffer@items=\count316
-\pgfsyssoftpath@bigbuffer@items=\count317
+\pgfsyssoftpath@smallbuffer@items=\count318
+\pgfsyssoftpath@bigbuffer@items=\count319
 ) (/usr/local/texlive/2026/texmf-dist/tex/generic/pgf/systemlayer/pgfsysprotocol.code.tex
 File: pgfsysprotocol.code.tex 2025-08-29 v3.1.11a (3.1.11a)
 )) (/usr/local/texlive/2026/texmf-dist/tex/latex/titlesec/titlesec.sty
@@ -603,7 +609,7 @@ Package: titlesec 2025/01/04 v2.17 Sectioning titles
 \titlewidthfirst=\dimen272
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/l3backend/l3backend-pdftex.def
 File: l3backend-pdftex.def 2025-10-09 L3 backend support: PDF output (pdfTeX)
-\l__color_backend_stack_int=\count318
+\l__color_backend_stack_int=\count320
 ) (./main.aux
 LaTeX Font Info:    Trying to load font information for T2A+cmr on input line 6.
  (/usr/local/texlive/2026/texmf-dist/tex/latex/cyrillic/t2acmr.fd
@@ -614,23 +620,23 @@ Package babel Info: 'russian' activates 'russian' shorthands.
 )
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 36.
-LaTeX Font Info:    ... okay on input line 36.
-LaTeX Info: Redefining \th on input line 36.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Font Info:    Checking defaults for T2A/cmr/m/n on input line 37.
+LaTeX Font Info:    ... okay on input line 37.
+LaTeX Info: Redefining \th on input line 37.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -670,16 +676,16 @@ Package caption Info: Begin \AtBeginDocument code.
 Package caption Info: End \AtBeginDocument code.
 (/usr/local/texlive/2026/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count319
+\scratchcounter=\count321
 \scratchdimen=\dimen273
 \scratchbox=\box61
-\nofMPsegments=\count320
-\nofMParguments=\count321
+\nofMPsegments=\count322
+\nofMParguments=\count323
 \everyMPshowfont=\toks38
-\MPscratchCnt=\count322
+\MPscratchCnt=\count324
 \MPscratchDim=\dimen274
-\MPnumerator=\count323
-\makeMPintoPDFobject=\count324
+\MPnumerator=\count325
+\makeMPintoPDFobject=\count326
 \everyMPtoPDFconversion=\toks39
 ) (/usr/local/texlive/2026/texmf-dist/tex/latex/epstopdf-pkg/epstopdf-base.sty
 Package: epstopdf-base 2020-01-24 v2.11 Base part for package epstopdf
@@ -693,7 +699,7 @@ Package svg Warning: No version of Inkscape was detected by invoking
 (svg)                so the Inkscape export will fail quite sure as the
 (svg)                command is probably unknown to your OS. You could set
 (svg)                `inkscapeversion=<version>' manually but this is very
-(svg)                unlikely to work on input line 36.
+(svg)                unlikely to work on input line 37.
 
 [1
 
@@ -748,23 +754,23 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 [3
 
 ] [4] [5{/usr/local/texlive/2026/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc}]
-Overfull \hbox (6.12218pt too wide) in paragraph at lines 113--114
+Overfull \hbox (6.12218pt too wide) in paragraph at lines 114--115
 []\T2A/cmr/m/n/14.4 Чтобы сфор-ми-ро-вать кван-то-вую точ-ку, необ-хо-ди-мо вы-толк-нуть элек-
  []
 
 <images/Hanson-1.png, id=34, 557.08125pt x 704.6325pt>
 File: images/Hanson-1.png Graphic file (type png)
 <use images/Hanson-1.png>
-Package pdftex.def Info: images/Hanson-1.png  used on input line 126.
+Package pdftex.def Info: images/Hanson-1.png  used on input line 127.
 (pdftex.def)             Requested size: 227.62206pt x 287.91203pt.
 [6] [7 <./images/Hanson-1.png>]
 <images/Bloch_Sphere.png, id=48, 356.33125pt x 392.46625pt>
 File: images/Bloch_Sphere.png Graphic file (type png)
 <use images/Bloch_Sphere.png>
-Package pdftex.def Info: images/Bloch_Sphere.png  used on input line 151.
+Package pdftex.def Info: images/Bloch_Sphere.png  used on input line 152.
 (pdftex.def)             Requested size: 364.19667pt x 401.14865pt.
  [8 <./images/Bloch_Sphere.png>] [9] [10] [11] [12]
-Overfull \hbox (12.19678pt too wide) in paragraph at lines 326--329
+Overfull \hbox (12.19678pt too wide) in paragraph at lines 327--330
 \T2A/cmr/m/n/14.4 Эта кон-цеп-ция бы-ла впер-вые пред-ло-же-на Дэ-ви-дом Дой-чем (David Deutsch)
  []
 
@@ -772,64 +778,64 @@ Overfull \hbox (12.19678pt too wide) in paragraph at lines 326--329
 <images/design.png, id=76, 779.91376pt x 440.847pt>
 File: images/design.png Graphic file (type png)
 <use images/design.png>
-Package pdftex.def Info: images/design.png  used on input line 391.
+Package pdftex.def Info: images/design.png  used on input line 392.
 (pdftex.def)             Requested size: 455.24411pt x 257.32603pt.
  [15 <./images/design.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 419--419
+Underfull \hbox (badness 10000) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Цвет на
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 419--419
+Underfull \hbox (badness 10000) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Ширина
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 419--419
+Underfull \hbox (badness 10000) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Барьерные за-тво-ры
  []
 
 
-Underfull \hbox (badness 1383) in paragraph at lines 419--419
+Underfull \hbox (badness 1383) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Плунжерные за-тво-ры
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 419--419
+Underfull \hbox (badness 10000) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Барьерные за-тво-ры
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 419--419
+Underfull \hbox (badness 10000) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Плунжерный за-твор
  []
 
 
-Overfull \hbox (1.56032pt too wide) in paragraph at lines 419--419
+Overfull \hbox (1.56032pt too wide) in paragraph at lines 420--420
 []|\T2A/cmr/m/up/12 Пурпурный| 
  []
 
 
-Underfull \hbox (badness 10000) in alignment at lines 419--419
+Underfull \hbox (badness 10000) in alignment at lines 420--420
 [][][][][] 
  []
 
 LaTeX Font Info:    Font shape `OML/cmr/m/up' in size <14.4> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 434.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 435.
 LaTeX Font Info:    Font shape `OMS/cmr/m/up' in size <14.4> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 434.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 435.
 [16] [17]
-Overfull \hbox (4.01555pt too wide) in paragraph at lines 450--453
+Overfull \hbox (4.01555pt too wide) in paragraph at lines 451--454
 []\T2A/cmr/m/up/14.4 Устройство име-ет сле-ду-ю-щий вид. Мас-сив кван-то-вых то-чек (Рис. 1.4[])
  []
 
 <images/shuttle.png, id=90, 473.77pt x 322.20375pt>
 File: images/shuttle.png Graphic file (type png)
 <use images/shuttle.png>
-Package pdftex.def Info: images/shuttle.png  used on input line 467.
+Package pdftex.def Info: images/shuttle.png  used on input line 468.
 (pdftex.def)             Requested size: 227.62206pt x 154.79861pt.
 [18] [19 <./images/shuttle.png>]
-Overfull \hbox (2.11296pt too wide) in paragraph at lines 490--490
+Overfull \hbox (2.11296pt too wide) in paragraph at lines 491--491
 |[]\T2A/cmr/bx/n/17.28 Наведјнные кван-то-вые точ-ки в крем-ни-е-вых на-
  []
 
@@ -837,104 +843,135 @@ Overfull \hbox (2.11296pt too wide) in paragraph at lines 490--490
 <images/Zwerver.png, id=105, 618.31pt x 412.54124pt>
 File: images/Zwerver.png Graphic file (type png)
 <use images/Zwerver.png>
-Package pdftex.def Info: images/Zwerver.png  used on input line 544.
+Package pdftex.def Info: images/Zwerver.png  used on input line 558.
 (pdftex.def)             Requested size: 455.24411pt x 303.75238pt.
- [22 <./images/Zwerver.png>]
-Overfull \hbox (13.38438pt too wide) in paragraph at lines 566--571
-\T2A/cmr/m/up/14.4 мый для управ-ле-ния спи-на-ми ме-то-дом EDSR (electric-dipole spin resonance),
- []
-
-[23] [24] [25]
+ [22] [23 <./images/Zwerver.png>]
 {\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 2.
 
-Overfull \hbox (15.92778pt too wide) in paragraph at lines 647--648
+Overfull \hbox (15.92778pt too wide) in paragraph at lines 570--571
 \T2A/cmr/m/up/14.4 ро ме-нять рас-по-ло-же-ние эле-мен-тов, до-бав-лять но-вые со-став-ля-ю-щие устрой-
  []
 
 
-Overfull \hbox (1.7404pt too wide) in paragraph at lines 657--658
+Overfull \hbox (1.7404pt too wide) in paragraph at lines 580--581
 []\T2A/cmr/m/up/14.4 Основной це-лью дан-ной ди-плом-ной ра-бо-ты яв-ля-ет-ся раз-ра-бот-ка чис-
  []
 
 
-Overfull \hbox (2.03017pt too wide) in paragraph at lines 657--658
+Overfull \hbox (2.03017pt too wide) in paragraph at lines 580--581
 \T2A/cmr/m/up/14.4 лен-ной мо-де-ли, поз-во-ля-ю-щей с ну-ля рас-счи-ты-вать энер-ге-ти-че-ский спектр
+ []
+
+[24
+
+]
+Overfull \hbox (1.35925pt too wide) in paragraph at lines 590--591
+[]\T2A/cmr/m/up/14.4 Ожидаемые ре-зуль-та-ты ра-бо-ты поз-во-лят не толь-ко под-твер-дить кор-
+ []
+
+[25]
+{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 3.
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 609.
+
+<images/el_1.png, id=120, 3440.855pt x 2135.98pt>
+File: images/el_1.png Graphic file (type png)
+<use images/el_1.png>
+Package pdftex.def Info: images/el_1.png  used on input line 611.
+(pdftex.def)             Requested size: 455.24411pt x 282.576pt.
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 616.
+
+<images/gate_1_not_full.png, id=121, 1566.85374pt x 1028.84375pt>
+File: images/gate_1_not_full.png Graphic file (type png)
+<use images/gate_1_not_full.png>
+Package pdftex.def Info: images/gate_1_not_full.png  used on input line 618.
+(pdftex.def)             Requested size: 455.24411pt x 298.92221pt.
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 623.
+
+<images/many_el.png, id=122, 1549.79pt x 1000.73875pt>
+File: images/many_el.png Graphic file (type png)
+<use images/many_el.png>
+Package pdftex.def Info: images/many_el.png  used on input line 625.
+(pdftex.def)             Requested size: 455.24411pt x 293.96324pt.
+
+Overfull \hbox (13.40106pt too wide) in paragraph at lines 631--631
+|[]\T2A/cmr/bx/n/20.74 Математическая мо-дель и чис-лен-ный рас-
  []
 
 [26
 
-]
-Overfull \hbox (1.35925pt too wide) in paragraph at lines 667--668
-[]\T2A/cmr/m/up/14.4 Ожидаемые ре-зуль-та-ты ра-бо-ты поз-во-лят не толь-ко под-твер-дить кор-
- []
-
-[27]
-{\cyrillictext \CYRG \cyrl \cyra \cyrv \cyra } 3.
-<images/el_1.png, id=126, 3440.855pt x 2135.98pt>
-File: images/el_1.png Graphic file (type png)
-<use images/el_1.png>
-Package pdftex.def Info: images/el_1.png  used on input line 686.
-(pdftex.def)             Requested size: 455.24411pt x 282.576pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-<images/el_3.png, id=127, 3179.88pt x 2055.68pt>
-File: images/el_3.png Graphic file (type png)
-<use images/el_3.png>
-Package pdftex.def Info: images/el_3.png  used on input line 693.
-(pdftex.def)             Requested size: 455.24411pt x 294.28622pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-Overfull \hbox (13.40106pt too wide) in paragraph at lines 699--699
-|[]\T2A/cmr/bx/n/20.74 Математическая мо-дель и чис-лен-ный рас-
- []
-
-[28
-
-] [29 <./images/el_1.png>]
-Overfull \hbox (34.1037pt too wide) in paragraph at lines 732--733
+] [27 <./images/el_1.png>] [28 <./images/gate_1_not_full.png> <./images/many_el.png>]
+Overfull \hbox (34.1037pt too wide) in paragraph at lines 664--665
 []\T2A/cmr/m/up/14.4 Система ли-ней-ных ал-геб-ра-и-че-ских урав-не-ний, по-лу-ча-е-мая по-сле конечно-
  []
 
-[30 <./images/el_3.png>]
-LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 745.
- (/usr/local/texlive/2026/texmf-dist/tex/latex/cyrillic/t2acmtt.fd
-File: t2acmtt.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
-)
-Overfull \hbox (1.91605pt too wide) in paragraph at lines 747--748
+[29]
+Overfull \hbox (1.91605pt too wide) in paragraph at lines 679--680
 []\T2A/cmr/bx/n/14.4 Генерация вы-чис-ли-тель-ной сет-ки: \T2A/cmr/m/up/14.4 по-стро-е-ние трех-мер-ной мат-
  []
 
-[31] [32]
-Overfull \hbox (0.31761pt too wide) in paragraph at lines 791--792
+<images/nanobridge_cross_section_1qd.png, id=138, 1139.6979pt x 695.4783pt>
+File: images/nanobridge_cross_section_1qd.png Graphic file (type png)
+<use images/nanobridge_cross_section_1qd.png>
+Package pdftex.def Info: images/nanobridge_cross_section_1qd.png  used on input line 690.
+(pdftex.def)             Requested size: 432.48051pt x 263.91307pt.
+<images/nanobridge_cross_section_2qd.png, id=139, 1140.1797pt x 695.2374pt>
+File: images/nanobridge_cross_section_2qd.png Graphic file (type png)
+<use images/nanobridge_cross_section_2qd.png>
+Package pdftex.def Info: images/nanobridge_cross_section_2qd.png  used on input line 698.
+(pdftex.def)             Requested size: 432.48051pt x 263.70496pt.
+[30] [31 <./images/nanobridge_cross_section_1qd.png>] [32 <./images/nanobridge_cross_section_2qd.png>]
+Overfull \hbox (0.31761pt too wide) in paragraph at lines 740--741
 []\T2A/cmr/m/up/14.4 Матрица га-миль-то-ни-а-на $\OT1/cmr/bx/n/14.4 H$ \T2A/cmr/m/up/14.4 яв-ля-ет-ся сим-мет-рич-ной, лен-точ-ной (име-
  []
 
-[33]
-Overfull \hbox (13.60736pt too wide) in paragraph at lines 805--806
-\T2A/cmr/m/up/14.4 ша/Арнольди (\T2A/cmtt/m/n/14.4 scipy.sparse.linalg.eigsh\T2A/cmr/m/up/14.4 ) в ре-жи-ме "Shift-Invert".
+
+Overfull \hbox (0.73773pt too wide) in paragraph at lines 750--751
+\T2A/cmr/m/up/14.4 кон-фи-гу-ра-ции на-но-си-сте-мы гло-баль-ное по-ле по-тен-ци-а-ла про-грамм-
  []
 
-[34]
-Underfull \hbox (badness 1314) in paragraph at lines 1155--1158
+[33]
+LaTeX Font Info:    Trying to load font information for T2A+cmtt on input line 752.
+ (/usr/local/texlive/2026/texmf-dist/tex/latex/cyrillic/t2acmtt.fd
+File: t2acmtt.fd 2001/08/11 v1.0a Computer Modern Cyrillic font definitions
+)
+<images/wf_1qd_E0.png, id=156, 1730.465pt x 1060.96375pt>
+File: images/wf_1qd_E0.png Graphic file (type png)
+<use images/wf_1qd_E0.png>
+Package pdftex.def Info: images/wf_1qd_E0.png  used on input line 767.
+(pdftex.def)             Requested size: 432.48051pt x 265.15933pt.
+<images/wf_2qd_E0.png, id=157, 1722.435pt x 1076.02pt>
+File: images/wf_2qd_E0.png Graphic file (type png)
+<use images/wf_2qd_E0.png>
+Package pdftex.def Info: images/wf_2qd_E0.png  used on input line 776.
+(pdftex.def)             Requested size: 432.48051pt x 270.17007pt.
+
+
+LaTeX Warning: Float too large for page by 54.00105pt on input line 783.
+
+[34] [35 <./images/wf_1qd_E0.png> <./images/wf_2qd_E0.png>]
+Underfull \hbox (badness 1314) in paragraph at lines 1125--1128
 \T2A/cmr/m/it/14.4 by conveyor-mode spin-coherent electron shuttling\T2A/cmr/m/up/14.4 . Preprint, 2024.
  []
 
 
-Underfull \hbox (badness 1275) in paragraph at lines 1178--1181
+Underfull \hbox (badness 1275) in paragraph at lines 1148--1151
 []\T2A/cmr/m/up/14.4 Zwerver A.M.J. et al. Qubits made by advanced semiconductor
  []
 
 
-Underfull \hbox (badness 1117) in paragraph at lines 1189--1194
+Underfull \hbox (badness 1117) in paragraph at lines 1159--1164
 []\T2A/cmr/m/up/14.4 Tadokoro M., Nakajima T., Kobayashi T., Takeda K., Noiri A.,
  []
 
-[35
+[36
 
-] [36] (./main.aux)
+] [37] (./main.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2026-01-19>
@@ -945,18 +982,18 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 10852 strings out of 467525
- 190710 string characters out of 5418983
- 627828 words of memory out of 5000000
- 39519 multiletter control sequences out of 15000+600000
+ 11004 strings out of 467525
+ 194232 string characters out of 5418983
+ 630033 words of memory out of 5000000
+ 39669 multiletter control sequences out of 15000+600000
  652051 words of font info for 95 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 94i,12n,93p,1868b,440s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 94i,12n,93p,1868b,521s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx1728.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx2074.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfbx2488.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfcc1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1000.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfrm1728.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb></usr/local/texlive/2026/texmf-dist/fonts/type1/public/cm-super/sftt1440.pfb>
-Output written on main.pdf (36 pages, 3491450 bytes).
+Output written on main.pdf (37 pages, 6027295 bytes).
 PDF statistics:
- 268 PDF objects out of 1000 (max. 8388607)
- 163 compressed objects within 2 object streams
+ 284 PDF objects out of 1000 (max. 8388607)
+ 168 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 48 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 73 words of extra memory for PDF output out of 10000 (max. 10000000)
 
