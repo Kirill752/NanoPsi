@@ -1,0 +1,70 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: poison/__init__.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/poison/__init__.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: arnoldi.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/arnoldi.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: visualize_nanobridge_heatmap.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/visualize_nanobridge_heatmap.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: visualize_nanobridge_cross_section.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/visualize_nanobridge_cross_section.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "Python: visualize_potential_3d.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/visualize_potential_3d.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "python": "${workspaceFolder}/venv/bin/python",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}

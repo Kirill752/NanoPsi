@@ -348,6 +348,93 @@ class GateElectrode:
         
         return self.boxes
 
+
+class SourceDrainElectrodes:
+    """
+    Электроды стока и истока, подведенные к наномостику с утолщенных сторон (end parts).
+    Электроды лежат на оксиде и контактируют с утолщенными частями наномостика.
+    """
+    def __init__(self, nano_bridge: NanoBridge, oxide_thickness: float,
+                 electrode_thickness: float = 2.0, electrode_length: float = 10.0,
+                 mesh_size: float = 0.5):
+        """
+        Args:
+            nano_bridge: объект NanoBridge для получения геометрии
+            oxide_thickness: толщина оксида на наномостике
+            electrode_thickness: толщина электродов (по z)
+            electrode_length: длина электродов (по x, от края наномостика наружу)
+            mesh_size: размер сетки
+        """
+        self.nano_bridge = nano_bridge
+        self.oxide_thickness = oxide_thickness
+        self.electrode_thickness = electrode_thickness
+        self.electrode_length = electrode_length
+        self.mesh_size = mesh_size
+        self.source_boxes = []
+        self.drain_boxes = []
+    
+    def create_source_drain_electrodes(self):
+        """
+        Создает электроды стока и истока на оксиде с утолщенных сторон наномостика.
+        Source (исток) - слева, Drain (сток) - справа.
+        """
+        boxes = self.nano_bridge.get_boxes()
+        if len(boxes) < 3:
+            raise ValueError("NanoBridge должен иметь минимум 3 бокса (left, center, right)")
+        
+        left_box, center_box, right_box = boxes
+        
+        # Параметры наномостика
+        grip_height = self.nano_bridge.grip_height
+        grip_width = self.nano_bridge.grip_width
+        grip_length = self.nano_bridge.grip_length
+        end_length = self.nano_bridge.end_length
+        
+        # Электроды лежат на оксиде, т.е. на высоте z = 0 (на уровне подложки/оксида)
+        # Они контактируют с боковыми (утолщенными) частями наномостика
+        electrode_z = self.nano_bridge.grip_height + self.oxide_thickness
+        
+        # === SOURCE (исток) - левый электрод ===
+        # Располагается слева от левой утолщенной части наномостика
+        source_x = -grip_length/2 - end_length - self.electrode_length
+        source_y = -grip_width/2 - self.oxide_thickness
+        source_width = grip_width + 2 * self.oxide_thickness  # Ширина как у утолщенной части + оксид
+        
+        source_box = Box(
+            source_x + self.electrode_length, source_y, electrode_z,
+            self.electrode_length, source_width, self.electrode_thickness,
+            self.mesh_size
+        )
+        self.source_boxes.append(source_box)
+        
+        # === DRAIN (сток) - правый электрод ===
+        # Располагается справа от правой утолщенной части наномостика
+        drain_x = grip_length/2 + end_length
+        drain_y = -grip_width/2 - self.oxide_thickness
+        drain_width = grip_width + 2 * self.oxide_thickness
+        
+        drain_box = Box(
+            drain_x, drain_y, electrode_z,
+            -self.electrode_length, drain_width, self.electrode_thickness,
+            self.mesh_size
+        )
+        self.drain_boxes.append(drain_box)
+        
+        print(f"✓ Создан электрод SOURCE (исток) в x={source_x:.1f} нм")
+        print(f"✓ Создан электрод DRAIN (сток) в x={drain_x:.1f} нм")
+        
+        return self.source_boxes, self.drain_boxes
+    
+    def get_source_boxes(self) -> List[Box]:
+        return self.source_boxes
+    
+    def get_drain_boxes(self) -> List[Box]:
+        return self.drain_boxes
+    
+    def get_all_boxes(self) -> List[Box]:
+        return self.source_boxes + self.drain_boxes
+
+
 class CompleteNanoSystem:
     def __init__(self, config):
         self.config = config
@@ -355,6 +442,7 @@ class CompleteNanoSystem:
         self.substrate = None
         self.air_environment = None
         self.gate_electrodes = []  # Теперь список электродов
+        self.source_drain_electrodes = None  # Электроды стока и истока
         self.electrode_potentials = {}  # Словарь: имя электрода -> потенциал
         self.all_components = []
     
@@ -430,12 +518,48 @@ class CompleteNanoSystem:
             
             print(f"✓ Создан электрод '{electrode_name}' в x={center_x:.1f} нм, потенциал={el_config.get('potential', 0.0):.2f} В")
         
+        # Создаем электроды стока и истока, если указано в конфиге
+        source_drain_config = self.config.get('source_drain', None)
+        source_boxes = []
+        drain_boxes = []
+        
+        if source_drain_config and source_drain_config.get('enabled', False):
+            sd_thickness = source_drain_config.get('thickness', 2.0)
+            sd_length = source_drain_config.get('length', 10.0)
+            sd_mesh_size = source_drain_config.get('mesh_size', 0.5)
+            
+            self.source_drain_electrodes = SourceDrainElectrodes(
+                nano_bridge=self.nano_bridge,
+                oxide_thickness=oxide_thickness,
+                electrode_thickness=sd_thickness,
+                electrode_length=sd_length,
+                mesh_size=sd_mesh_size
+            )
+            source_boxes, drain_boxes = self.source_drain_electrodes.create_source_drain_electrodes()
+            
+            # Сохраняем потенциалы для source и drain
+            source_potential = source_drain_config.get('source_potential', 0.0)
+            drain_potential = source_drain_config.get('drain_potential', 0.0)
+            
+            self.electrode_potentials['source'] = {
+                'potential': source_potential,
+                'boxes': source_boxes
+            }
+            self.electrode_potentials['drain'] = {
+                'potential': drain_potential,
+                'boxes': drain_boxes
+            }
+            
+            print(f"✓ Электроды стока/истока: source_potential={source_potential:.2f} В, drain_potential={drain_potential:.2f} В")
+        
         self.all_components = {
             'nano_bridge': self.nano_bridge.get_boxes(),
             'oxide': self.nano_bridge.get_oxide_boxes(),
             'substrate': [substrate_box],
             'air': [air_box],
-            'gate': all_gate_boxes
+            'gate': all_gate_boxes,
+            'source': source_boxes,
+            'drain': drain_boxes
         }
         
         return self.all_components

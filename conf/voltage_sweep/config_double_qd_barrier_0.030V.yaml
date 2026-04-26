@@ -1,0 +1,86 @@
+# Конфигурация: Двойная квантовая точка
+# Double Quantum Dot (DQD) - Loss-DiVincenzo architecture
+# Barrier electrode voltage: 0.03V
+# Left and Right plunger electrodes: 0.3V
+
+air_environment:
+  height_above: 20.0
+  height_below: 5.0
+  mesh_size: 3.0
+  padding: 50.0
+analysis:
+  gradient_estimation_radius: 1.0
+  potential_tolerance_percent: 1.0
+  symmetry_threshold: 0.1
+electrodes:
+- center_x: -50.0
+  coverage_angle: 180
+  gap_distance: 0
+  length: 30.0
+  mesh_size: 0.5
+  name: Left_Plunger
+  oxide_thickness: 3.0
+  potential: 0.3
+  thickness: 15.0
+- center_x: 0.0
+  coverage_angle: 180
+  gap_distance: 0
+  length: 30.0
+  mesh_size: 0.5
+  name: Barrier
+  oxide_thickness: 3.0
+  potential: 0.03
+  thickness: 15.0
+- center_x: 50.0
+  coverage_angle: 180
+  gap_distance: 0
+  length: 30.0
+  mesh_size: 0.5
+  name: Right_Plunger
+  oxide_thickness: 3.0
+  potential: 0.3
+  thickness: 15.0
+file_path:
+  output_directory: results/voltage_sweep
+  potential_data_file: results/voltage_sweep/double_qd_potential_barrier_0.030V.dat
+  results_file: results/voltage_sweep/double_qd_results_barrier_0.030V.pkl
+  spectra_file: results/voltage_sweep/double_qd_spectra_barrier_0.030V.dat
+  visualization_output: results/voltage_sweep/double_qd_structure_barrier_0.030V.png
+materials:
+  dielectric_constants:
+    air: 1.0
+    gate: 10000000000.0
+    nanobridge: 11.7
+    oxide: 3.9
+    substrate: 11.7
+nanobridge:
+  end_length: 50.0
+  end_width: 100.0
+  grip_height: 8.0
+  grip_length: 200.0
+  grip_width: 50.0
+  mesh_size: 0.5
+  oxide_thickness: 15.0
+solver:
+  grid_resolution: 150
+  max_iterations: 10000
+  relaxation_parameter: 1.7
+  tolerance: 1.0e-07
+substrate:
+  mesh_size: 2.0
+  padding: 70.0
+  thickness: 10.0
+visualization:
+  color_maps:
+    electric_field: inferno
+    electrode: gray
+    potential: viridis
+  opacity: 0.6
+  plot_style:
+    dpi: 150
+    figure_size:
+    - 12
+    - 8
+    font_size: 14
+  point_size: 5
+  slice_tolerance: 0.1

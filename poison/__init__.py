@@ -3,29 +3,28 @@ from poison.view.utils.psi_export import PsiDataExporter
 from poison.view.field_view import NanoSystemVisualizer
 from poison.lib.model import CompleteNanoSystem
 from poison.solver import ElectricFieldSolver
-from conf.config import ConfigManager
+from conf.config import ConfigManager, CONFIGS
+import glob
+import os
+
 
 def main():
-    config = ConfigManager.load_config("conf/config.yaml")
-    nano_system = CompleteNanoSystem(config)
-    nano_system.create_complete_system()
-
-    NanoSystemVisualizer(nano_system).visualize_complete_system()
+    # Visualize all single_qd_voltage_sweep configurations
+    # config_dir = "conf/voltage_sweep/"
+    config_files = ["conf/voltage_sweep/config_double_qd_barrier_0.005V.yaml"]
     
-    field_solver = ElectricFieldSolver(nano_system, grid_resolution=config["solver"]["grid_resolution"])
-    field_solver.solve_laplace_sor(
-        omega=config["solver"]["relaxation_parameter"],
-        max_iter=config["solver"]["max_iterations"],
-        tolerance=config["solver"]["tolerance"],
-        out=config["file_path"]["results_file"]
-    )
+    print(f"Found {len(config_files)} config files to visualize")
     
-    visualize_nanobridge_potential(config, nano_system, save_plots=True)
+    for config_file in config_files:
+        print(f"\nProcessing: {config_file}")
+        config = ConfigManager.load_config(config_file)
+        nano_system = CompleteNanoSystem(config)
+        nano_system.create_complete_system()
+        NanoSystemVisualizer(nano_system).visualize_complete_system()
+        print(f"  Visualization saved to: {config['file_path']['visualization_output']}")
+    
+    print(f"\nCompleted visualization of {len(config_files)} structures")
 
-
-    exporter = PsiDataExporter(field_solver, nano_system)
-    exporter.export_to_psi_format(config["file_path"]["potential_data_file"])
-    exporter.create_spectra_file(config["file_path"]["spectra_file"])
 
 if __name__ == "__main__":
     main()

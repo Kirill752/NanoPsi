@@ -55,7 +55,7 @@ def visualize_wavefunction(filename, isosurface_value=0.1):
     
     # Add nanostructure visualization
     try:
-        config = ConfigManager.load_config("conf/config.yaml")
+        config = ConfigManager.load_config("conf/config_double_qd.yaml")
         nano_system = CompleteNanoSystem(config)
         nano_system.create_complete_system()
         
@@ -124,7 +124,7 @@ def visualize_wavefunction(filename, isosurface_value=0.1):
     plotter.close()
 
 def main():
-    psi_files = glob.glob("results/psi_*.dat")
+    psi_files = glob.glob("results/single_qd_voltage_sweep/energy/wavefunctions_0.05V/psi_*.dat")
     psi_files.sort()
     
     if not psi_files:

@@ -2,6 +2,14 @@ import os
 import json
 import yaml
 
+CONFIGS = [
+    # "conf/config.yaml",
+    # "conf/config_single_qd.yaml",
+    "conf/config_double_qd.yaml",
+    # "conf/config_linear_array.yaml",
+    # "conf/config_shuttle.yaml"
+]
+
 class ConfigManager:    
     @staticmethod
     def load_config(config_file):

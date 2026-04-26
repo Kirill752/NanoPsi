@@ -1,0 +1,95 @@
+# Конфигурация: Двойная квантовая точка
+# Double Quantum Dot (DQD) - Loss-DiVincenzo architecture
+
+nanobridge:
+  grip_length: 200.0
+  grip_width: 50.0
+  grip_height: 8.0
+  end_length: 50.0
+  end_width: 100.0
+  mesh_size: 0.5
+  oxide_thickness: 15.0
+
+electrodes:
+  - name: "Left_Plunger"
+    center_x: -50.0
+    coverage_angle: 180
+    gap_distance: 0
+    length: 30.0
+    mesh_size: 0.5
+    name: Plunger
+    oxide_thickness: 3.0
+    potential: 0.3
+    thickness: 15.0
+
+  - name: "Barrier"
+    center_x: 0.0
+    coverage_angle: 180
+    gap_distance: 0
+    length: 30.0
+    mesh_size: 0.5
+    name: Plunger
+    oxide_thickness: 3.0
+    potential: 0.0
+    thickness: 15.0
+
+  - name: "Right_Plunger"
+    center_x: 50.0
+    coverage_angle: 180
+    gap_distance: 0
+    length: 30.0
+    mesh_size: 0.5
+    name: Plunger
+    oxide_thickness: 3.0
+    potential: 0.3
+    thickness: 15.0
+
+substrate:
+  thickness: 10.0
+  padding: 70.0
+  mesh_size: 2.0
+
+air_environment:
+  padding: 50.0
+  height_above: 20.0
+  height_below: 5.0
+  mesh_size: 3.0
+
+solver:
+  grid_resolution: 150
+  max_iterations: 10000
+  tolerance: 1.0e-7
+  relaxation_parameter: 1.7
+
+visualization:
+  slice_tolerance: 0.1
+  point_size: 5
+  opacity: 0.6
+  color_maps:
+    potential: "viridis"
+    electric_field: "inferno"
+    electrode: "gray"
+  plot_style:
+    figure_size: [12, 8]
+    font_size: 14
+    dpi: 150
+
+analysis:
+  potential_tolerance_percent: 1.0
+  gradient_estimation_radius: 1.0
+  symmetry_threshold: 0.1
+
+materials:
+  dielectric_constants:
+    air: 1.0
+    oxide: 3.9
+    nanobridge: 11.7
+    substrate: 11.7
+    gate: 1.0e+10
+
+file_path:
+  output_directory: "results"
+  potential_data_file: "double_qd_potential.dat"
+  spectra_file: "double_qd_spectra.dat"
+  results_file: "double_qd_results.pkl"
+  visualization_output: "double_qd_structure.png"

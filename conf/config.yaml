@@ -40,6 +40,15 @@ electrodes:
     center_x: 8.0
     oxide_thickness: 2.0 # Должно совпадать с nanobridge oxide
 
+# Электроды стока и истока (source/drain)
+source_drain:
+  enabled: true           # Включить/выключить электроды стока и истока
+  thickness: 15.0          # Толщина электродов (по z)
+  length: 10.0            # Длина электродов (по x, от края наномостика наружу)
+  mesh_size: 0.5          # Размер сетки
+  source_potential: 0.0   # Потенциал истока (source)
+  drain_potential: 0.0    # Потенциал стока (drain)
+
 substrate:
   thickness: 10.0
   padding: 50.0
@@ -82,6 +91,8 @@ materials:
     nanobridge: 11.7  # Si
     substrate: 11.7   # Si
     gate: 1.0e+10     # Металл (идеальный проводник)
+    source: 1.0e+10   # Металл (идеальный проводник)
+    drain: 1.0e+10    # Металл (идеальный проводник)
 
 file_path:
   output_directory: "results"

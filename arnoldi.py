@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import os
 import yaml
 
+M_EFF = 0.19
+
 def load_config(config_path="diplom/conf/config.yaml"):
     try:
         with open(config_path, 'r') as f:
@@ -122,7 +124,7 @@ def load_potential(filename, config=None):
     
     return V, unique_x, unique_y, unique_z
 
-def build_hamiltonian(V, x, y, z, m_eff=0.067):
+def build_hamiltonian(V, x, y, z, m_eff=M_EFF):
     print("Building Hamiltonian...")
     
     nx, ny, nz = V.shape
@@ -232,53 +234,71 @@ def save_wavefunctions(vecs, vals, x, y, z, output_dir="results"):
 
 
 
-def main():
-    potential_file = "nanobridge_potential.dat"
+def save_energy_levels(vals, voltage, output_dir="results/voltage_sweep"):
+    """Save energy levels to a file for a given voltage."""
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
     
-    config = load_config()
-    
-    try:
-        V, x, y, z = load_potential(potential_file, config)
-    except FileNotFoundError as e:
-        print(e)
-        return
+    filename = os.path.join(output_dir, f"spectra_{voltage:.3f}V.dat")
+    with open(filename, 'w') as f:
+        f.write(f"# Energy levels for side gate voltage = {voltage:.3f} V\n")
+        f.write("# Level  Energy (eV)\n")
+        for i, E in enumerate(vals):
+            f.write(f"{i}  {E:.6f}\n")
+    print(f"Energy levels saved to {filename}")
 
-    H = build_hamiltonian(V, x, y, z, m_eff=0.067)
+
+def main():
+    potential_file = "double_qd_potential.dat"
+    config_file = "conf/config_double_qd.yaml"
+
+    potential_file_template = "results/voltage_sweep/potential/potential_{:.3f}V.dat"
+    conf_template = "conf/voltage_sweep/config_double_qd_{:.3f}V.yaml"
+    # voltages = [0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30]
     
-    # V содержит электростатический потенциал φ (в вольтах)
-    # Потенциальная энергия электрона: U = -e·φ = -φ (в эВ)
-    min_phi = np.min(V)
-    max_phi = np.max(V)
-    mean_phi = np.mean(V)
-    min_U = -max_phi  # Минимум U там, где φ максимален (электрод)
-    max_U = -min_phi
-    
-    print(f"\nЭлектростатический потенциал в обрезанной области:")
-    print(f"  φ_min = {min_phi:.4f} V")
-    print(f"  φ_max = {max_phi:.4f} V")
-    print(f"  φ_mean = {mean_phi:.4f} V")
-    print(f"\nПотенциальная энергия электрона (U = -e·φ = -φ в эВ):")
-    print(f"  U_min = {min_U:.4f} eV (электрод притягивает)")
-    print(f"  U_max = {max_U:.4f} eV")
-    print(f"\nОжидаемая энергия основного состояния: чуть выше {min_U:.4f} eV")
-    
-    num_levels = 5
-    vals, vecs = solve_schrodinger(H, k=num_levels, sigma=min_U + 0.01)
-    
-    print("\nCalculated Energy Levels (eV):")
-    for i, E in enumerate(vals):
-        print(f"Level {i}: {E:.6f} eV")
+    for voltage in [0.005]:
+        print(f"\n{'='*60}")
+        print(f"Processing voltage: {voltage:.3f} V")
+        print(f"{'='*60}")
         
-    save_wavefunctions(vecs, vals, x, y, z)
-    
-    plt.figure(figsize=(8, 6))
-    plt.plot(range(num_levels), vals, 'bo-', label='Energy Levels')
-    plt.xlabel('Level Index')
-    plt.ylabel('Energy (eV)')
-    plt.title('Energy Spectrum of Electron in Nanobridge Potential')
-    plt.grid(True)
-    plt.savefig('results/energy_spectrum.png')
-    print("Spectrum plot saved to results/energy_spectrum.png")
+        config = load_config(conf_template.format(voltage))
+        potential_file = potential_file_template.format(voltage)
+
+        try:
+            V, x, y, z = load_potential(potential_file, config)
+        except FileNotFoundError as e:
+            print(e)
+            continue
+
+        H = build_hamiltonian(V, x, y, z, m_eff=M_EFF)
+
+        # V содержит электростатический потенциал φ (в вольтах)
+        # Потенциальная энергия электрона: U = -e·φ = -φ (в эВ)
+        min_phi = np.min(V)
+        max_phi = np.max(V)
+        mean_phi = np.mean(V)
+        min_U = -max_phi  # Минимум U там, где φ максимален (электрод)
+        max_U = -min_phi
+
+        print(f"\nЭлектростатический потенциал в обрезанной области:")
+        print(f"  φ_min = {min_phi:.4f} V")
+        print(f"  φ_max = {max_phi:.4f} V")
+        print(f"  φ_mean = {mean_phi:.4f} V")
+        print(f"\nПотенциальная энергия электрона (U = -e·φ = -φ в эВ):")
+        print(f"  U_min = {min_U:.4f} eV (электрод притягивает)")
+        print(f"  U_max = {max_U:.4f} eV")
+        print(f"\nОжидаемая энергия основного состояния: чуть выше {min_U:.4f} eV")
+
+        num_levels = 5
+        vals, vecs = solve_schrodinger(H, k=num_levels, sigma=min_U + 0.01)
+
+        print("\nCalculated Energy Levels (eV):")
+        for i, E in enumerate(vals):
+            print(f"Level {i}: {E:.6f} eV")
+
+        save_energy_levels(vals, voltage, "results/voltage_sweep")
+
+        save_wavefunctions(vecs, vals, x, y, z, output_dir=f"results/voltage_sweep/wavefunctions_{voltage:.2f}V")
 
 if __name__ == "__main__":
     main()
